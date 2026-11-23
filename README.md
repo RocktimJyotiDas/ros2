@@ -101,6 +101,9 @@ RECORD=1 scripts/sim_demo.sh && python3 scripts/make_video.py runs/img4827_fit40
 ```
 
 Videos of both scenes: `results/videos/scene1_twin.mp4`, `results/videos/scene2_control_rigid_disc.mp4`.
+The real experiment's camera sequence (front camera, capture → `locate` → `run_tasks`), seen from the
+front camera and an overview: `results/videos/scene3_front_camera_pipeline.mp4`
+(`RECORD=1 scripts/sim_camera_pipeline.sh`, then `scripts/make_video.py runs/img4827_cam --cams front overview`).
 
 Each run takes ~7 min. It writes `runs/<world>/answers.json`; the log shows every probing step.
 
