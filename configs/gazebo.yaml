@@ -15,8 +15,8 @@ topics:
   wrench: /force_torque_sensor_broadcaster/wrench
   trajectory_action: /scaled_joint_trajectory_controller/follow_joint_trajectory
   zero_ft: /io_and_status_controller/zero_ftsensor   # not in Gazebo (the readings are differences anyway)
-  image: /camera/camera/color/image_raw            # realsense2_camera defaults; any RGB camera works
-  camera_info: /camera/camera/color/camera_info
+  image: /topcam/image                 # GAZEBO: the simulated top-down camera (make_world.py --topcam)
+  camera_info: /topcam/camera_info
 
 # Arm pose between objects and while photographing: must keep the arm OUT of the camera's view.
 # Default: ur3e_plan_runner's plan start (home_q_ros), gripper pointing down at base (0.30, -0.13, 0.30).

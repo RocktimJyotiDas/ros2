@@ -3,7 +3,7 @@
 ## 1. Data flow
 
 ```
-top-down photo ──(offline: SAM-3D + SLAT-Phys)──► grasps.json  (per object: centre, yaw, width, top, height; robot base frame)
+calibrated top-down photo + empty-table photo ──(locate)──► grasps.json  (per object: centre, yaw, width, top, height; robot base frame)
                                                     │
 configs/real.yaml ─────────────────────────────────►│
                                                     ▼
@@ -36,6 +36,27 @@ The same file drives the real robot and the Gazebo bench.
 4. Reads `readings.json` and prints and saves both answers (`tasks.report`). With `--plan` it
    scores them against the measured ground truth; with `--sim` it compares them with the twin's
    simulated readings.
+
+### `locate.py`: where the objects are (camera → `grasps.json`)
+1. Undistort the scene photo and the empty-table photo with the calibration's `K`, `D`.
+2. **Masks (`diff_masks`).**
+   - Compare chromaticity, r, g, b each divided by their sum, so colour independent of brightness.
+     A shadow darkens the table without changing its colour, so it drops out.
+   - A pixel that got brighter also counts.
+   - Clean up with morphological open/close and hole filling, then keep the N largest blobs. N is
+     the number of plan objects.
+   - Hand-drawn masks (`--masks_dir`) skip this step.
+3. **Matching.** Each blob's centroid is cast onto the table, and blobs are assigned to plan objects
+   by nearest `xy_base` (Hungarian assignment). It warns if a blob is more than 6 cm away.
+4. **Footprint (`pixels_to_plane`).** Every mask pixel becomes a camera ray, `K⁻¹ [u v 1]` rotated
+   by `cam2base`, and is intersected with the plane at the object's mid-height. That height comes
+   from the plan's `size_mm[2]`: a camera looking straight down can't see it.
+5. **Grasp (`footprint_grasp`).** `cv2.minAreaRect` fits the smallest rectangle around the
+   footprint. The closing axis runs across its narrow side, the width is that side, and the
+   centre is the rectangle's centre. This stays correct for square objects, where a
+   principal-axis fit picks an arbitrary direction.
+6. **Output.** Writes `grasps.json` and an overlay PNG showing the masks, each centre, and each
+   closing axis.
 
 ### `probe.py`: the scripted probing (`Prober`)
 - `geometry(o)` computes three things:

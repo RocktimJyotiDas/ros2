@@ -1,0 +1,48 @@
+{
+  "scene_id": "img4827",
+  "scale": 0.48509997038350605,
+  "squeeze_forces_N": [
+    20.0,
+    60.0
+  ],
+  "objects": [
+    {
+      "name": "yellow_toy",
+      "id": "yellow_toy",
+      "xy_base": [
+        0.127,
+        -0.249
+      ],
+      "mass_g": 1.5,
+      "soft": true,
+      "expected_compression_mm": 9.71,
+      "slatphys_soft": true,
+      "E": 80272.234375,
+      "spring_k_N_per_m": 2510.4807548607,
+      "size_mm": [
+        22.1,
+        29.2,
+        36.4
+      ]
+    },
+    {
+      "name": "green_disc",
+      "id": "green_disc",
+      "xy_base": [
+        0.192,
+        -0.189
+      ],
+      "mass_g": 2.27,
+      "soft": false,
+      "expected_compression_mm": 0.0,
+      "slatphys_soft": false,
+      "E": 217451.09375,
+      "spring_k_N_per_m": null,
+      "size_mm": [
+        40.0,
+        40.0,
+        11.9
+      ]
+    }
+  ]
+}

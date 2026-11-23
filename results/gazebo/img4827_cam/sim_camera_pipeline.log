@@ -1,0 +1,46 @@
+Summary: 2 packages finished [2.37s]
+=== 1. capture the empty table
+  waiting for the controllers .
+wrote <repo>/runs/img4827_cam/captures/_empty/rgb.png (1280x720) and camera_info.json
+=== 2. capture the scene
+  waiting for the controllers ..
+wrote <repo>/runs/img4827_cam/captures/scene/rgb.png (1280x720) and camera_info.json
+=== 3. locate the objects
+  yellow_toy     centre [0.126, -0.25]  yaw   42.9 deg  width  27.2 mm  length  31.8 mm  height  36.4 mm (plan)
+  green_disc     centre [0.192, -0.189]  yaw   99.1 deg  width  41.9 mm  length  42.2 mm  height  11.9 mm (plan)
+wrote <repo>/runs/img4827_cam/grasps.json and <repo>/runs/img4827_cam/grasps_overlay.png (check: each mask on its object, the white line across the narrow side)
+located vs the scene's true grasps:
+  yellow_toy   centre error   0.8 mm   axis error  0.1 deg   width  27.2 mm (true  22.1)
+  green_disc   centre error   0.1 mm   axis error  0.0 deg   width  41.9 mm (true  40.0)
+=== 4. run_tasks on the located grasps
+preflight ok: 2 objects
+scene img4827 (heavy_deformable): 2 objects, table z 0.0000 m in base
+[probe] object 1 (yellow_toy): squeeze - approach
+[probe] object 1 (yellow_toy): descend to z 0.025 above the table
+    squeeze 20 N: width 13.7 mm (OBJ 2)
+    squeeze 60 N: width 4.4 mm (OBJ 2)
+[probe] object 1 (yellow_toy): release, retreat
+[probe] object 2 (green_disc): squeeze - approach
+[probe] object 2 (green_disc): descend to z 0.025 above the table
+    squeeze 20 N: width 40.0 mm (OBJ 2)
+    squeeze 60 N: width 40.0 mm (OBJ 2)
+[probe] object 2 (green_disc): release, retreat
+[probe] object 1 (yellow_toy): weigh the empty gripper at the hold pose
+[probe] object 1 (yellow_toy): approach
+[probe] object 1 (yellow_toy): grip at 20 N, lift, hold
+[probe] object 1 (yellow_toy): put back, release, retreat
+    load 0.015 N (= 1 g), drift 0.0 N, lifted True
+[probe] object 2 (green_disc): weigh the empty gripper at the hold pose
+[probe] object 2 (green_disc): approach
+[probe] object 2 (green_disc): grip at 20 N, lift, hold
+[probe] object 2 (green_disc): put back, release, retreat
+    load 0.022 N (= 2 g), drift 0.0 N, lifted True
+wrote <repo>/runs/img4827_cam
+  [real] 1 yellow_toy       load   0.015 N (~    1 g)  compression   9.31 mm  lifted True
+  [real] 2 green_disc       load   0.022 N (~    2 g)  compression   0.00 mm  lifted True
+  [real] heavy      -> green_disc  CORRECT
+  [real] deformable -> yellow_toy  CORRECT
+wrote <repo>/runs/img4827_cam/answers.json
+INFO:    Terminating squashfuse_ll after timeout
+INFO:    Timeouts can be caused by a running background process
+exit 0

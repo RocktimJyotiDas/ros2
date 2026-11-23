@@ -1,0 +1,41 @@
+{
+  "scene_id": "img4827",
+  "task": "heavy_deformable",
+  "frame": "base",
+  "table_z_base": 0.0,
+  "source": "camera (locate)",
+  "objects": [
+    {
+      "name": "yellow_toy",
+      "obj_id": "yellow_toy",
+      "grasp": {
+        "centre_xy": [
+          0.1263,
+          -0.2498
+        ],
+        "yaw": 0.748378,
+        "width": 0.027156,
+        "top_z": 0.0364,
+        "height": 0.0364
+      },
+      "footprint_length_m": 0.031771,
+      "mask_area_px": 3982
+    },
+    {
+      "name": "green_disc",
+      "obj_id": "green_disc",
+      "grasp": {
+        "centre_xy": [
+          0.1924,
+          -0.1891
+        ],
+        "yaw": 1.729452,
+        "width": 0.041884,
+        "top_z": 0.0119,
+        "height": 0.0119
+      },
+      "footprint_length_m": 0.042203,
+      "mask_area_px": 7830
+    }
+  ]
+}

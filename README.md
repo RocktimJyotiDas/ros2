@@ -27,8 +27,7 @@ One probing run answers both tasks. For each object, the robot does two passes:
    - The empty gripper is weighed once more to cancel sensor drift.
    - Load = |F_with − F_without|.
 
-Answers: **heavy** = largest load, **deformable** = largest compression. Grasp positions, gripper
-yaw and grasp width come from the SLAT-Phys reconstruction of a top-down photo of the scene (`grasps.json`).
+Answers: **heavy** = largest load, **deformable** = largest compression. Grasp positions, gripper yaw and grasp width come from a calibrated top-down camera photo (`locate` → `grasps.json`).
 
 ## Safety layers (all on by default)
 
@@ -47,6 +46,7 @@ yaw and grasp width come from the SLAT-Phys reconstruction of a top-down photo o
 ```
 src/slatphys_real/          the robot code (ament_python)
   run_tasks.py              ONE command for both tasks: preflight -> probe -> answers.json
+  locate.py                 calibrated top-down photo -> grasps.json (where each object is, how to grasp it)
   probe.py                  the scripted squeeze + weigh passes
   tasks.py                  the answer rule (heavy / deformable); `answer` re-scores saved readings
   arm_enme480.py            arm through the lab stack (PlanSender -> ENME480 bridge)  [real robot]
@@ -67,7 +67,7 @@ configs/real.yaml           the real robot: IP, topics, gripper geometry, protoc
 configs/gazebo.yaml         real.yaml with only the simulation backends changed (marked GAZEBO)
 data/plans/img4827.json     the scene: object names, planned positions, ground truth to fill in
 data/twin/img4827/          the photo, masks, and the SLAT-Phys twin (sim.json, hull meshes, grasps.json)
-real2sim/                   offline (GPU) steps between the camera photo and the robot:
+real2sim/                   optional offline (GPU) SLAT-Phys comparison:
   make_scene.py             photo + calibration -> object masks and real table positions
   materialize_real.py       reconstruction -> grasps.json (base frame) + the simulation twin
   plan_scenes.py            sample scene plans from an object inventory (configs/objects.yaml)
@@ -75,6 +75,7 @@ real2sim/                   offline (GPU) steps between the camera photo and the
   correlate.py              sim-vs-real metrics over many scenes
   photo_scene.py, photo_pipeline.py   the paper's pipeline on an uncalibrated phone photo (data/twin)
 scripts/offline.sh          recon / materialize / simprobe / correlate wrappers (needs SLATPHYS_SCENE)
+scripts/sim_camera_pipeline.sh   Gazebo: the real sequence (capture, capture, locate, run_tasks) with a simulated camera
 scripts/sim_demo.sh         Gazebo: launch, check the bench, run both tasks (RECORD=1 records video)
 scripts/make_worlds.sh      regenerate the Gazebo worlds from the twin
 scripts/record_world.py, record_frames.py, make_video.py   Gazebo video recording
@@ -91,6 +92,7 @@ docker build -t slatphys-sim:jazzy -f docker/Dockerfile.sim .
 xhost +local:docker
 docker/run_sim.sh
 # inside the container (repo at /ws):
+scripts/sim_camera_pipeline.sh                                          # the real experiment's sequence, camera included
 GUI=1 scripts/sim_demo.sh                                              # twin scene, Gazebo window
 GUI=1 scripts/sim_demo.sh src/slatphys_gazebo/worlds/img4827_fit40_rigiddisc
 scripts/sim_demo.sh src/slatphys_gazebo/worlds/img4827_asis           # preflight refuses (disc too wide)
@@ -118,6 +120,7 @@ Checks:
 | `img4827_fit40`: the SLAT-Phys twin, scaled so the grasps fit the Hand-E | disc ✔ | disc ✘ (expected toy) |
 | `img4827_fit40_rigiddisc`: control, disc rigid | disc ✔ | toy ✔ |
 | `img4827_asis`: the twin at the photo's scale | refused by preflight: disc 82 mm > 46 mm | — |
+| `img4827_cam`: **the real sequence**, capture → `locate` → `run_tasks`, simulated camera, soft toy + rigid disc | disc ✔ | toy ✔ |
 
 Why the twin's "deformable" differs:
 - SLAT-Phys predicts **both** objects soft (E = 8e4 and 2.2e5 Pa), so their predicted
@@ -142,34 +145,63 @@ source /workspace/install/setup.bash && cd /workspace/src/slatphys
 ros2 launch slatphys_real bringup.launch.py robot_ip:=$UR_IP        # then Play External Control, slider <= 30 %
 ```
 
-Then:
+Then, all on the robot PC (no GPU, no reconstruction, no simulation):
 
-1. **Calibrate (once).** Run `calibrate_camera` (touch 6 ArUco markers), `calibrate_gripper`, and
-   `capture --out data/real/captures/_empty` for the empty-table photo.
-2. **Set up the scene.** Run `place --plan data/plans/img4827.json --execute MOVE_REAL_UR3E` (the
-   fingertips point at each planned position), then `capture`.
-3. **Reconstruct offline** (GPU machine, `real2sim/` + `scripts/offline.sh`; **do not move the objects**).
-   Copy `data/real/captures/` and `data/real/calib/` there, then:
+1. **Calibrate (once).**
    ```bash
-   export SLATPHYS_SCENE=/path/to/SLAT-Phys-Scene          # the SAM-3D + SLAT-Phys reconstruction checkout
-   python3 real2sim/make_scene.py --plan data/plans/img4827.json \
-       --capture data/real/captures/img4827 --empty data/real/captures/_empty   # check data/real/scenes/img4827/overlay.png
-   scripts/offline.sh recon data/real/scenes/img4827      # SAM-3D meshes + SLAT-Phys physics, ~1-2 min per object
-   scripts/offline.sh materialize                         # -> data/real/sim/slatphys/img4827/grasps.json (robot base frame)
+   ros2 run slatphys_real calibrate_camera --markers 6 --execute MOVE_REAL_UR3E   # >= 4 ArUco markers, 6 recommended
+   ros2 run slatphys_real calibrate_gripper --widths_mm 10 20 30 40               # optional: finger width model
+   ros2 run slatphys_real capture --out data/real/captures/_empty --execute MOVE_REAL_UR3E   # empty table
    ```
-   `make_scene` masks the objects by differencing with the empty-table photo, then casts each mask
-   centre through the calibrated camera onto the table plane. That gives the objects' real
-   positions; the plan's `xy_base` only names them. Copy `grasps.json` back to the robot PC.
-4. **Run the tasks:**
+2. **Set up the scene.** Fill `size_mm` (calipers, `[w, l, height]`) for each object in the plan;
+   the height is the one thing the top-down camera cannot see. Place the objects (`place` points
+   the fingertips at each planned position), then photograph them:
    ```bash
-   G=data/real/sim/slatphys/img4827/grasps.json
+   ros2 run slatphys_real place   --plan data/plans/img4827.json --execute MOVE_REAL_UR3E
+   ros2 run slatphys_real capture --out data/real/captures/img4827 --execute MOVE_REAL_UR3E
+   ```
+3. **Locate the objects** (`locate`, a few seconds):
+   ```bash
+   ros2 run slatphys_real locate --plan data/plans/img4827.json --capture data/real/captures/img4827 \
+       --empty data/real/captures/_empty --out data/real/grasps/img4827.json
+   ```
+   - It masks each object by its colour change against the empty table. Shadows only darken
+     the table, so they are ignored.
+   - It casts every mask pixel through the calibrated camera onto the table, at the object's
+     mid-height, in the robot `base` frame.
+   - It fits the smallest rectangle around that footprint. The grasp closes across the narrow
+     side, at the rectangle's centre.
+
+   **Check `data/real/grasps/img4827_overlay.png`:** each mask should sit on its object, and the
+   white line (the closing axis) should run across the narrow side. **Do not move the objects from
+   here on.**
+4. **Run the two tasks** (squeeze pass → deformable, weigh pass → heavy):
+   ```bash
+   G=data/real/grasps/img4827.json
    ros2 run slatphys_real run_tasks --grasps $G --plan data/plans/img4827.json --out runs/real_img4827 --dry_run
    ros2 run slatphys_real run_tasks --grasps $G --plan data/plans/img4827.json --out runs/real_img4827 \
        --execute MOVE_REAL_UR3E --activate_gripper --step
    ```
    With the default 30 % slider a scene of two objects takes about 7 minutes. Keep a hand on the e-stop.
 
-## Offline dependencies
+**Validated in Gazebo** (`scripts/sim_camera_pipeline.sh`, `results/gazebo/img4827_cam/`): the same
+four commands, with a simulated top-down camera (0.45 m, 1280×720) standing in for the lab
+camera. Results:
+- `locate` found the objects within 0.8 mm and 0.1 mm of their true centres, with the closing
+  axis within 0.1°.
+- Widths came out 27.2 and 41.9 mm against true 22.1 and 40.0 mm. The tall toy's visible sides
+  widen its outline. This only affects the preflight width check, on the safe side.
+- `run_tasks` then answered **heavier = green_disc ✔** and **deformable = yellow_toy ✔**
+  (soft toy, rigid disc).
+
+### Optional: compare with SLAT-Phys's predictions (GPU, not needed to run the tasks)
+
+`real2sim/` and `scripts/offline.sh` reconstruct the same captured scene with SAM-3D + SLAT-Phys
+(`make_scene.py` → `offline.sh recon` → `offline.sh materialize`), probe the twin in Isaac Sim
+(`offline.sh simprobe`) and correlate sim with real (`offline.sh correlate`). Their
+`grasps.json` can replace `locate`'s.
+
+## Offline dependencies (optional SLAT-Phys comparison)
 
 The offline steps (`real2sim/`, `scripts/offline.sh`, `tests/offline/`) need, on a GPU machine:
 

@@ -25,6 +25,7 @@ setup(
             "calibrate_camera = slatphys_real.calibrate_camera:main",
             "calibrate_gripper = slatphys_real.calibrate_gripper:main",
             "run_tasks = slatphys_real.run_tasks:main",
+            "locate = slatphys_real.locate:main",
             "answer = slatphys_real.tasks:main",
         ],
     },

@@ -3,6 +3,8 @@
 #   img4827_asis             the twin at the photo's assumed scale (disc 82 mm: preflight must refuse it)
 #   img4827_fit40            the twin scaled so the widest grasp is 40 mm (fits the Hand-E)
 #   img4827_fit40_rigiddisc  control: same, with the disc rigid (an unambiguous deformable answer)
+#   img4827_cam              the control scene (soft toy, rigid disc) + a top-down camera: the real
+#                            experiment's camera path (scripts/sim_camera_pipeline.sh)
 set -e
 R=$(cd "$(dirname "$0")/.." && pwd)
 T=$R/data/twin/img4827
@@ -11,3 +13,5 @@ WD=$R/src/slatphys_gazebo/worlds
 $MW --out $WD/img4827_asis
 $MW --out $WD/img4827_fit40 --fit_width 0.040
 $MW --out $WD/img4827_fit40_rigiddisc --fit_width 0.040 --rigid green_disc
+# the camera path of the real experiment (capture -> locate -> run_tasks), with a simulated top-down camera
+$MW --out $WD/img4827_cam --fit_width 0.040 --rigid green_disc --topcam

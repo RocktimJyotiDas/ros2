@@ -1,0 +1,37 @@
+{
+  "cam2base_opencv": [
+    [
+      0.0,
+      1.0,
+      -6.123233995736766e-17,
+      0.15965000000000001
+    ],
+    [
+      1.0,
+      0.0,
+      0.0,
+      -0.2192
+    ],
+    [
+      0.0,
+      -6.123233995736766e-17,
+      -1.0,
+      0.45
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "table_z_base": 0.0,
+  "D": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "note": "the simulated camera's exact pose: what calibrate_camera measures in the lab. K comes from the captured camera_info."
+}

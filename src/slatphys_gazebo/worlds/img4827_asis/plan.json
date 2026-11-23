@@ -8,6 +8,11 @@
   "objects": [
     {
       "name": "yellow_toy",
+      "id": "yellow_toy",
+      "xy_base": [
+        0.127,
+        -0.249
+      ],
       "mass_g": 13.14,
       "soft": false,
       "expected_compression_mm": 23.54,
@@ -22,6 +27,11 @@
     },
     {
       "name": "green_disc",
+      "id": "green_disc",
+      "xy_base": [
+        0.192,
+        -0.189
+      ],
       "mass_g": 19.86,
       "soft": true,
       "expected_compression_mm": 35.34,

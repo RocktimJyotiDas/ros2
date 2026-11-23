@@ -119,6 +119,53 @@ WORLD = """<?xml version="1.0"?>
 """
 
 
+# The lab camera, simulated: straight down, 0.45 m above the table over the objects (README:
+# 0.40-0.50 m, over the object area). 1280x720 and ~69 deg horizontal FOV, like the RealSense profile.
+TOPCAM = {"height": 0.45, "w": 1280, "h": 720, "hfov": 1.20, "rate": 5}
+
+
+def rpy_matrix(r, p, y):
+    cr, sr, cp, sp, cy, sy = np.cos(r), np.sin(r), np.cos(p), np.sin(p), np.cos(y), np.sin(y)
+    return np.array([[cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr],
+                     [sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr],
+                     [-sp, cp * sr, cp * cr]])
+
+
+def topcam(centre_world):
+    """SDF for a downward camera above centre_world, and its pose as calibrate_camera would report
+    it: cam2base in OpenCV axes (x right, y down, z forward)."""
+    pose = (centre_world[0], centre_world[1], TOPCAM["height"], 0.0, np.pi / 2, 0.0)  # camera +x points down
+    T_world_link = np.eye(4)
+    T_world_link[:3, :3], T_world_link[:3, 3] = rpy_matrix(*pose[3:]), pose[:3]
+    link_cv = np.array([[0, 0, 1], [-1, 0, 0], [0, -1, 0]], float)  # columns: OpenCV x, y, z in the camera link
+    T_world_cv = T_world_link.copy()
+    T_world_cv[:3, :3] = T_world_link[:3, :3] @ link_cv
+    T_base_world = np.diag([-1.0, -1.0, 1.0, 1.0])  # base = base_link turned 180 deg about z
+    sdf = f"""
+    <model name="topcam">
+      <static>true</static>
+      <pose>{" ".join(f"{v:.5f}" for v in pose)}</pose>
+      <link name="link">
+        <sensor name="topcam" type="camera">
+          <always_on>true</always_on>
+          <update_rate>{TOPCAM["rate"]}</update_rate>
+          <topic>/topcam/image</topic>
+          <camera>
+            <horizontal_fov>{TOPCAM["hfov"]}</horizontal_fov>
+            <image><width>{TOPCAM["w"]}</width><height>{TOPCAM["h"]}</height><format>R8G8B8</format></image>
+            <clip><near>0.05</near><far>5</far></clip>
+          </camera>
+        </sensor>
+      </link>
+    </model>
+"""
+    return sdf, (T_base_world @ T_world_cv).tolist()
+
+
+SENSORS = ('    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">'
+           "<render_engine>ogre2</render_engine></plugin>\n")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sim", required=True, help="the SLAT-Phys twin's sim.json")
@@ -127,6 +174,8 @@ def main():
     ap.add_argument("--fit_width", type=float, default=None, help="scale the scene so the widest grasp is this (m)")
     ap.add_argument("--scene_id", default=None)
     ap.add_argument("--rigid", nargs="*", default=[], help="make these objects rigid (control scenes)")
+    ap.add_argument("--topcam", action="store_true",
+                    help="add the top-down camera (validates capture + locate) and an object-free world_empty.sdf")
     ap.add_argument("--squeeze_forces", type=float, nargs=2, default=[20.0, 60.0], help="as configs/*.yaml protocol")
     args = ap.parse_args()
     sim, gr = json.load(open(args.sim)), json.load(open(args.grasps))
@@ -156,7 +205,22 @@ def main():
     models = "".join(model(o, (-o["xy_base"][0], -o["xy_base"][1]), o["yaw_base"] + math.pi, colors[k % 4])
                      for k, o in enumerate(objs))
     os.makedirs(args.out, exist_ok=True)
-    open(os.path.join(args.out, "world.sdf"), "w").write(WORLD.format(src=os.path.relpath(args.sim, args.out), mu=MU, models=models))
+    src = os.path.relpath(args.sim, args.out)
+    if args.topcam:
+        xy = np.mean([o["xy_base"] for o in objs], 0)
+        cam_sdf, cam2base = topcam((-xy[0], -xy[1]))
+        w = WORLD.format(src=src, mu=MU, models=models + cam_sdf)
+        w = w.replace('    <plugin filename="gz-sim-physics-system"', SENSORS + '    <plugin filename="gz-sim-physics-system"', 1)
+        open(os.path.join(args.out, "world.sdf"), "w").write(w)
+        e = WORLD.format(src=src, mu=MU, models=cam_sdf)
+        e = e.replace('    <plugin filename="gz-sim-physics-system"', SENSORS + '    <plugin filename="gz-sim-physics-system"', 1)
+        open(os.path.join(args.out, "world_empty.sdf"), "w").write(e)
+        json.dump({"cam2base_opencv": cam2base, "table_z_base": 0.0, "D": [0.0] * 5,
+                   "note": "the simulated camera's exact pose: what calibrate_camera measures in the lab. "
+                           "K comes from the captured camera_info."},
+                  open(os.path.join(args.out, "topcam_pose.json"), "w"), indent=2)
+    else:
+        open(os.path.join(args.out, "world.sdf"), "w").write(WORLD.format(src=src, mu=MU, models=models))
     sid = args.scene_id or gr["scene_id"]
     json.dump({"scene_id": sid, "task": "heavy_deformable", "frame": "base", "table_z_base": 0.0,
                "objects": [{"name": o["name"], "obj_id": o["name"], "grasp": {
@@ -171,7 +235,8 @@ def main():
         o["expected_compression_m"] = d[-1] - d[0]
     soft_i = int(np.argmax([o["expected_compression_m"] for o in objs]))
     json.dump({"scene_id": sid, "scale": s, "squeeze_forces_N": args.squeeze_forces, "objects": [{
-        "name": o["name"], "mass_g": round(o["mass_kg"] * 1000, 2), "soft": i == soft_i,
+        "name": o["name"], "id": o["name"], "xy_base": [round(v, 3) for v in o["xy_base"]],
+        "mass_g": round(o["mass_kg"] * 1000, 2), "soft": i == soft_i,
         "expected_compression_mm": round(o["expected_compression_m"] * 1000, 2),
         "slatphys_soft": o["soft"], "E": o["E"], "spring_k_N_per_m": o["k"],
         "size_mm": [round(o["width"] * 1000, 1), round(o["length"] * 1000, 1), round(o["height"] * 1000, 1)]}
