@@ -1,0 +1,21 @@
+
+Summary: 2 packages finished [3.37s]
+waiting for the controllers ..
+[INFO] [1795446866.213834488] [_ros2cli_206734]: waiting for service /controller_manager/list_controllers to become available...
+gripper_effort_controller          effort_controllers/JointGroupEffortController   active
+scaled_joint_trajectory_controller ur_controllers/ScaledJointTrajectoryController  active
+joint_state_broadcaster            joint_state_broadcaster/JointStateBroadcaster   active
+--- wrist F/T (one message: the gripper's weight, ~12 N)
+  force:
+    x: 9.674362519232336e-06
+    y: -0.00013186096838494268
+    z: 11.96579999919274
+  torque:
+--- base -> tool0: Gazebo's TF vs slatphys_real.ur_kinematics FK at the same joints
+TF [ 0.2985 -0.131   0.3033]  FK [ 0.2985 -0.131   0.3033]  |diff| 0.00 mm
+=== run_tasks: both tasks, one probing run
+PREFLIGHT: object 2 (green_disc): grasp width 82 mm > 46 mm (Hand-E stroke 50 mm minus margin): it cannot be grasped top-down
+1 preflight problem(s); nothing moved
+[ros2run]: Process exited with failure 1
+INFO:    Terminating squashfuse_ll after timeout
+INFO:    Timeouts can be caused by a running background process

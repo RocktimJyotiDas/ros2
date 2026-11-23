@@ -1,0 +1,3 @@
+{"scene_id": "heavy_lab_test", "task": "heavy", "frame": "base", "table_z_base": -0.011, "objects": [
+ {"name": "steel cube", "obj_id": "steel_cube", "grasp": {"centre_xy": [0.20, -0.26], "yaw": 0.4, "width": 0.025, "top_z": 0.014, "height": 0.025}},
+ {"name": "wooden block", "obj_id": "wood_block", "grasp": {"centre_xy": [0.27, -0.17], "yaw": -1.1, "width": 0.03, "top_z": 0.019, "height": 0.03}}]}

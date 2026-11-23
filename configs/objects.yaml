@@ -1,0 +1,24 @@
+# Inventory of the real objects. Fill in after measuring: kitchen scale (0.1 g) and calipers.
+# This is the real-world ground truth for the three tasks:
+#   heavy, sort  <- mass_g          deformable <- soft
+#
+# Requirements (see README "Choosing objects"):
+#   - grasp width (narrow side, across the fingers) 15-40 mm: the Hand-E opens 50 mm and the
+#     SAM-3D reconstruction can come out wider than the real object
+#   - largest dimension 35-90 mm, height >= 15 mm, stable when set down
+#   - mass 30-500 g; heavy / sort pairs differ by >= 2x (the UR3e's wrist F/T resolves ~0.1-0.2 N
+#     after averaging, i.e. ~10-20 g)
+#   - visually informative: material and weight should be guessable from appearance (a steel
+#     block, a wooden block, a foam toy); no painted props, no hollow look-alikes
+#   - matte or lightly textured; avoid transparent / mirror objects (segmentation, SAM-3D)
+#   - soft: compresses by >= 3 mm between 20 N and 60 N without being crushed flat at 20 N
+#
+# name: short visual description; it also labels the object in plots.
+# class: free text (for your notes); soft: true / false.
+
+objects:
+  - {id: steel_cube,    name: "steel cube",          class: metal,   mass_g: 123.0, size_mm: [25, 25, 25], soft: false}
+  - {id: wood_block,    name: "wooden block",        class: wood,    mass_g: 24.0,  size_mm: [40, 30, 30], soft: false}
+  - {id: foam_cube,     name: "yellow foam cube",    class: foam,    mass_g: 4.0,   size_mm: [40, 40, 40], soft: true}
+  - {id: rubber_duck,   name: "rubber duck",         class: rubber,  mass_g: 30.0,  size_mm: [60, 45, 55], soft: true}
+  # ... replace these placeholders with your measured objects (aim for 8-12)

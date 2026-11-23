@@ -1,0 +1,44 @@
+
+Summary: 2 packages finished [3.31s]
+waiting for the controllers ..
+[INFO] [1795447341.378245122] [_ros2cli_214638]: waiting for service /controller_manager/list_controllers to become available...
+gripper_effort_controller          effort_controllers/JointGroupEffortController   active
+joint_state_broadcaster            joint_state_broadcaster/JointStateBroadcaster   active
+scaled_joint_trajectory_controller ur_controllers/ScaledJointTrajectoryController  active
+--- wrist F/T (one message: the gripper's weight, ~12 N)
+  force:
+    x: 9.674290360798811e-06
+    y: -0.00013186096840716102
+    z: 11.965799999192722
+  torque:
+--- base -> tool0: Gazebo's TF vs slatphys_real.ur_kinematics FK at the same joints
+TF [ 0.2985 -0.131   0.3033]  FK [ 0.2985 -0.131   0.3033]  |diff| 0.00 mm
+=== run_tasks: both tasks, one probing run
+preflight ok: 2 objects
+scene img4827 (heavy_deformable): 2 objects, table z 0.0000 m in base
+[probe] object 1 (yellow_toy): squeeze - approach
+[probe] object 1 (yellow_toy): descend to z 0.025 above the table
+    squeeze 20 N: width 13.7 mm (OBJ 2)
+    squeeze 60 N: width 4.4 mm (OBJ 2)
+[probe] object 1 (yellow_toy): release, retreat
+[probe] object 2 (green_disc): squeeze - approach
+[probe] object 2 (green_disc): descend to z 0.025 above the table
+    squeeze 20 N: width 40.0 mm (OBJ 2)
+    squeeze 60 N: width 40.0 mm (OBJ 2)
+[probe] object 2 (green_disc): release, retreat
+[probe] object 1 (yellow_toy): weigh the empty gripper at the hold pose
+[probe] object 1 (yellow_toy): approach
+[probe] object 1 (yellow_toy): grip at 20 N, lift, hold
+[probe] object 1 (yellow_toy): put back, release, retreat
+    load 0.015 N (= 1 g), drift 0.0 N, lifted True
+[probe] object 2 (green_disc): weigh the empty gripper at the hold pose
+[probe] object 2 (green_disc): approach
+[probe] object 2 (green_disc): grip at 20 N, lift, hold
+[probe] object 2 (green_disc): put back, release, retreat
+    load 0.022 N (= 2 g), drift 0.0 N, lifted True
+wrote <repo>/runs/img4827_fit40_rigiddisc
+  [real] 1 yellow_toy       load   0.015 N (~    1 g)  compression   9.31 mm  lifted True
+  [real] 2 green_disc       load   0.022 N (~    2 g)  compression   0.00 mm  lifted True
+  [real] heavy      -> green_disc  CORRECT
+  [real] deformable -> yellow_toy  CORRECT
+wrote <repo>/runs/img4827_fit40_rigiddisc/answers.json

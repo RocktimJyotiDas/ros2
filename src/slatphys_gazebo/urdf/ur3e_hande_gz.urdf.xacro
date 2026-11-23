@@ -1,0 +1,148 @@
+<?xml version="1.0"?>
+<!--
+  UR3e + a Hand-E-sized parallel gripper + a wrist force/torque sensor, for Gazebo Harmonic.
+
+  ur_simulation_gz's ur_gz.urdf.xacro (arm, gz_ros2_control) plus
+    gripper  body fixed to tool0; two fingers on prismatic joints along tool0 x (the closing
+             axis, as on the real Hand-E and in ur_kinematics.tool_pose). Joint position = how far
+             each finger's inner face is from the centre, so the opening is q_left + q_right
+             (0 = closed, 0.050 = the Hand-E's 50 mm stroke). The fingers take an EFFORT
+             command - a constant closing force, like the Hand-E's force-limited grip.
+    F/T      a Gazebo force_torque sensor on wrist_3_joint (everything below the flange hangs
+             from it, as on the real UR's flange sensor), published on the topic ur_robot_driver
+             uses, /force_torque_sensor_broadcaster/wrench (bridged in sim.launch.py).
+
+  Geometry matches configs/gazebo.yaml - fingertips tip_z = 0.145 m below the flange, pad
+  centre tcp_z = 0.125 m, pad half length 0.020 m, pad width 0.022 m.
+-->
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="$(arg name)">
+  <xacro:arg name="name" default="ur"/>
+  <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
+  <xacro:include filename="$(find ur_simulation_gz)/urdf/ur_gz.ros2_control.xacro"/>
+
+  <xacro:arg name="ur_type" default="ur3e"/>
+  <xacro:arg name="tf_prefix" default=""/>
+  <xacro:arg name="joint_limit_params" default="$(find ur_description)/config/$(arg ur_type)/joint_limits.yaml"/>
+  <xacro:arg name="kinematics_params" default="$(find ur_description)/config/$(arg ur_type)/default_kinematics.yaml"/>
+  <xacro:arg name="physical_params" default="$(find ur_description)/config/$(arg ur_type)/physical_parameters.yaml"/>
+  <xacro:arg name="visual_params" default="$(find ur_description)/config/$(arg ur_type)/visual_parameters.yaml"/>
+  <xacro:arg name="safety_limits" default="false"/>
+  <xacro:arg name="safety_pos_margin" default="0.15"/>
+  <xacro:arg name="safety_k_position" default="20"/>
+  <xacro:arg name="simulation_controllers" default=""/>
+  <xacro:arg name="ros_namespace" default=""/>
+
+  <xacro:property name="body_len" value="0.105"/>   <!-- flange to the top of the finger pads -->
+  <xacro:property name="pad_len" value="0.040"/>    <!-- along the approach axis -->
+  <xacro:property name="pad_w" value="0.022"/>      <!-- across the approach axis -->
+  <xacro:property name="pad_t" value="0.010"/>      <!-- finger thickness along the closing axis -->
+  <xacro:property name="finger_mass" value="0.05"/>
+  <xacro:property name="half_stroke" value="0.025"/>
+
+  <link name="world"/>
+
+  <xacro:ur_robot name="$(arg name)" tf_prefix="$(arg tf_prefix)" parent="world"
+    joint_limits_parameters_file="$(arg joint_limit_params)"
+    kinematics_parameters_file="$(arg kinematics_params)"
+    physical_parameters_file="$(arg physical_params)"
+    visual_parameters_file="$(arg visual_params)"
+    safety_limits="$(arg safety_limits)" safety_pos_margin="$(arg safety_pos_margin)"
+    safety_k_position="$(arg safety_k_position)" force_abs_paths="true">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </xacro:ur_robot>
+
+  <!-- gripper body - ~ the Hand-E's 0.86 kg -->
+  <link name="gripper_body">
+    <inertial>
+      <origin xyz="0 0 ${body_len / 2}"/>
+      <mass value="0.86"/>
+      <inertia ixx="0.0011" iyy="0.0011" izz="0.0006" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 ${body_len / 2}"/>
+      <geometry><box size="0.075 0.050 ${body_len}"/></geometry>
+      <material name="hande_grey"><color rgba="0.25 0.25 0.28 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${body_len / 2}"/>
+      <geometry><box size="0.075 0.050 ${body_len}"/></geometry>
+    </collision>
+  </link>
+  <joint name="gripper_mount" type="fixed">
+    <parent link="tool0"/>
+    <child link="gripper_body"/>
+  </joint>
+
+  <!-- side = +1 (left, +x) or -1 (right, -x). Joint position 0 = finger face at the centre -->
+  <xacro:macro name="finger" params="name side">
+    <link name="${name}">
+      <inertial>
+        <origin xyz="${side * pad_t / 2} 0 ${body_len + pad_len / 2}"/>
+        <mass value="${finger_mass}"/>
+        <inertia ixx="1e-5" iyy="1e-5" izz="1e-5" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual>
+        <origin xyz="${side * pad_t / 2} 0 ${body_len + pad_len / 2}"/>
+        <geometry><box size="${pad_t} ${pad_w} ${pad_len}"/></geometry>
+        <material name="pad_black"><color rgba="0.05 0.05 0.05 1"/></material>
+      </visual>
+      <collision>
+        <origin xyz="${side * pad_t / 2} 0 ${body_len + pad_len / 2}"/>
+        <geometry><box size="${pad_t} ${pad_w} ${pad_len}"/></geometry>
+      </collision>
+    </link>
+    <joint name="${name}_joint" type="prismatic">
+      <parent link="gripper_body"/>
+      <child link="${name}"/>
+      <axis xyz="${side} 0 0"/>
+      <limit lower="0.0" upper="${half_stroke}" effort="200" velocity="0.2"/>
+      <!-- damping sets the closing speed under a constant force - 20 N / 400 = 5 cm/s -->
+      <dynamics damping="400" friction="0"/>
+    </joint>
+    <gazebo reference="${name}">
+      <mu1>1.5</mu1>
+      <mu2>1.5</mu2>
+    </gazebo>
+  </xacro:macro>
+  <xacro:finger name="finger_left" side="1"/>
+  <xacro:finger name="finger_right" side="-1"/>
+
+  <!-- wrist F/T - the wrench wrist_3_joint transmits, in the child (wrist_3_link) frame -->
+  <gazebo reference="wrist_3_joint">
+    <sensor name="wrist_ft" type="force_torque">
+      <always_on>true</always_on>
+      <update_rate>125</update_rate>
+      <topic>/force_torque_sensor_broadcaster/wrench</topic>
+      <force_torque>
+        <frame>child</frame>
+        <measure_direction>child_to_parent</measure_direction>
+      </force_torque>
+    </sensor>
+  </gazebo>
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(arg simulation_controllers)</parameters>
+      <ros><namespace>$(arg ros_namespace)</namespace></ros>
+    </plugin>
+  </gazebo>
+
+  <xacro:ur_ros2_control name="$(arg name)" tf_prefix="$(arg tf_prefix)"
+    initial_positions="${dict(shoulder_pan_joint=0.0,shoulder_lift_joint=-1.5708,elbow_joint=-1.5708,wrist_1_joint=-1.5708,wrist_2_joint=1.5708,wrist_3_joint=0.0)}"/>
+
+  <ros2_control name="gripper" type="system">
+    <hardware><plugin>gz_ros2_control/GazeboSimSystem</plugin></hardware>
+    <joint name="finger_left_joint">
+      <command_interface name="effort"/>
+      <state_interface name="position"><param name="initial_value">${half_stroke}</param></state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="finger_right_joint">
+      <command_interface name="effort"/>
+      <state_interface name="position"><param name="initial_value">${half_stroke}</param></state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+  </ros2_control>
+</robot>

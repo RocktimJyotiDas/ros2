@@ -1,0 +1,29 @@
+
+Summary: 1 package finished [4.17s]
+=== dry run (prints every TCP target)
+preflight ok: 2 objects
+scene heavy_test (heavy): 2 objects, table z 0.0000 m in base
+[probe] object 1 (steel cube): squeeze - approach
+    dry run: TCP -> [-0.3, 0.06, 0.125] yaw 17 deg
+    dry run: TCP -> [-0.3, 0.06, 0.025] yaw 17 deg
+    dry run: TCP -> [-0.3, 0.06, 0.125] yaw 17 deg
+[probe] object 2 (wooden block): squeeze - approach
+    dry run: TCP -> [-0.34, -0.09, 0.13] yaw 111 deg
+    dry run: TCP -> [-0.34, -0.09, 0.025] yaw 111 deg
+    dry run: TCP -> [-0.34, -0.09, 0.13] yaw 111 deg
+[probe] object 1 (steel cube): weigh the empty gripper at the hold pose
+    dry run: TCP -> [-0.25, 0.0, 0.22] yaw 17 deg
+=== mock arm + gripper, then both answers
+[probe] object 2 (wooden block): put back, release, retreat
+    load 0.000 N (= 0 g), drift 0.0 N, lifted True
+wrote /tmp/$USER/slatphys_run_tasks/mock
+  [real] 1 steel cube       load   0.000 N (~    0 g)  compression   0.00 mm  lifted True
+  [real] 2 wooden block     load   0.000 N (~    0 g)  compression   0.00 mm  lifted True
+  [real] heavy      -> steel cube
+  [real] deformable -> steel cube
+wrote /tmp/$USER/slatphys_run_tasks/mock/answers.json
+=== refused: real motion without the arming phrase
+[ros2run]: Process exited with failure 1
+=== answer from saved readings
+  [real] heavy      -> steel cube
+  [real] deformable -> steel cube

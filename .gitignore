@@ -1,0 +1,10 @@
+# colcon
+build/
+install/
+log/
+# Gazebo / robot run outputs (results/ holds the committed reference runs)
+runs/
+# real-robot calibration and captures are lab-specific
+data/real/
+__pycache__/
+*.pyc

@@ -1,0 +1,29 @@
+preflight ok: 2 objects
+scene img4827 (heavy_deformable): 2 objects, table z 0.0000 m in base
+[probe] object 1 (yellow_toy): squeeze - approach
+[probe] object 1 (yellow_toy): descend to z 0.025 above the table
+    squeeze 20 N: width 13.7 mm (OBJ 2)
+    squeeze 60 N: width 4.4 mm (OBJ 2)
+[probe] object 1 (yellow_toy): release, retreat
+[probe] object 2 (green_disc): squeeze - approach
+[probe] object 2 (green_disc): descend to z 0.025 above the table
+    squeeze 20 N: width 23.8 mm (OBJ 2)
+    squeeze 60 N: width 8.0 mm (OBJ 2)
+[probe] object 2 (green_disc): release, retreat
+[probe] object 1 (yellow_toy): weigh the empty gripper at the hold pose
+[probe] object 1 (yellow_toy): approach
+[probe] object 1 (yellow_toy): grip at 20 N, lift, hold
+[probe] object 1 (yellow_toy): put back, release, retreat
+    load 0.015 N (= 1 g), drift 0.0 N, lifted True
+[probe] object 2 (green_disc): weigh the empty gripper at the hold pose
+[probe] object 2 (green_disc): approach
+[probe] object 2 (green_disc): grip at 20 N, lift, hold
+[probe] object 2 (green_disc): put back, release, retreat
+    load 0.022 N (= 2 g), drift 0.0 N, lifted True
+wrote <repo>/runs/img4827_fit40
+  [real] 1 yellow_toy       load   0.015 N (~    1 g)  compression   9.31 mm  lifted True
+  [real] 2 green_disc       load   0.022 N (~    2 g)  compression  15.76 mm  lifted True
+  [real] heavy      -> green_disc  CORRECT
+  [real] deformable -> green_disc  WRONG (truth: yellow_toy)
+wrote <repo>/runs/img4827_fit40/answers.json
+The following exception was never retrieved: cannot use Destroyable because destruction was requested

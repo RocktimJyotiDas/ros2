@@ -1,0 +1,27 @@
+<?xml version="1.0"?><sdf version="1.9"><world name="w">
+  <physics name="1ms" type="ignored"><max_step_size>0.001</max_step_size><real_time_factor>0</real_time_factor></physics>
+  <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+  <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+  
+  <model name="s0"><pose>0.0 0 0.1 0 0 0</pose>
+    <link name="a"><inertial><mass>1</mass><inertia><ixx>1e-3</ixx><iyy>1e-3</iyy><izz>1e-3</izz></inertia></inertial>
+      <collision name="c"><geometry><box><size>0.05 0.05 0.01</size></box></geometry></collision></link>
+    <joint name="fix" type="fixed"><parent>world</parent><child>a</child></joint>
+    <link name="b"><pose>0 0 0.05 0 0 0</pose><inertial><mass>1</mass><inertia><ixx>1e-3</ixx><iyy>1e-3</iyy><izz>1e-3</izz></inertia></inertial>
+      <collision name="c"><geometry><box><size>0.05 0.05 0.01</size></box></geometry></collision></link>
+    <joint name="spring" type="prismatic"><parent>a</parent><child>b</child>
+      <axis><xyz>0 0 1</xyz><limit><lower>-0.04</lower><upper>0.04</upper></limit>
+        <dynamics><spring_reference>0</spring_reference><spring_stiffness>1000.0</spring_stiffness><damping>20</damping></dynamics></axis></joint>
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher"/>
+  </model>
+  <model name="s1"><pose>0.5 0 0.1 0 0 0</pose>
+    <link name="a"><inertial><mass>1</mass><inertia><ixx>1e-3</ixx><iyy>1e-3</iyy><izz>1e-3</izz></inertia></inertial>
+      <collision name="c"><geometry><box><size>0.05 0.05 0.01</size></box></geometry></collision></link>
+    <joint name="fix" type="fixed"><parent>world</parent><child>a</child></joint>
+    <link name="b"><pose>0 0 0.05 0 0 0</pose><inertial><mass>1</mass><inertia><ixx>1e-3</ixx><iyy>1e-3</iyy><izz>1e-3</izz></inertia></inertial>
+      <collision name="c"><geometry><box><size>0.05 0.05 0.01</size></box></geometry></collision></link>
+    <joint name="spring" type="prismatic"><parent>a</parent><child>b</child>
+      <axis><xyz>0 0 1</xyz><limit><lower>-0.04</lower><upper>0.04</upper></limit>
+        <dynamics><spring_reference>0</spring_reference><spring_stiffness>3000.0</spring_stiffness><damping>20</damping></dynamics></axis></joint>
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher"/>
+  </model></world></sdf>

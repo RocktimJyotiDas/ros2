@@ -1,0 +1,34 @@
+{
+  "scene_id": "img4827",
+  "real": {
+    "source": "real",
+    "objects": [
+      "yellow_toy",
+      "green_disc"
+    ],
+    "load_N": [
+      0.0147,
+      0.022226
+    ],
+    "compression_m": [
+      0.009309,
+      0.015758
+    ],
+    "lifted": [
+      true,
+      true
+    ],
+    "answers": {
+      "heavy": {
+        "answer": 2,
+        "name": "green_disc",
+        "truth": 2
+      },
+      "deformable": {
+        "answer": 2,
+        "name": "green_disc",
+        "truth": 1
+      }
+    }
+  }
+}

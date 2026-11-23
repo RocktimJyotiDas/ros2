@@ -1,0 +1,68 @@
+# Real UR3e + Robotiq Hand-E setup for the SLAT-Phys real2sim experiment.
+# Lengths in metres, angles in radians, forces in newtons. Frame: the ROS `base` frame
+# (= the pendant's "Base" feature), z up. The objects lie toward -x of it, as in the simulation.
+
+robot_ip: 192.168.77.22          # the lab UR3e (ur3e_experiments README: UR_IP)
+
+# enme480: through the lab's stack (ur3e_plan_runner's PlanSender -> /ur3e/command -> ENME480 bridge),
+# with its safety checks; trajectory: straight to scaled_joint_trajectory_controller (no bridge).
+motion_backend: trajectory   # this test drives the controller directly (no ENME480 bridge)
+
+topics:
+  joint_states: /joint_states
+  wrench: /force_torque_sensor_broadcaster/wrench
+  trajectory_action: /joint_trajectory_controller/follow_joint_trajectory
+  zero_ft: /io_and_status_controller/zero_ftsensor
+  image: /camera/camera/color/image_raw            # realsense2_camera defaults; any RGB camera works
+  camera_info: /camera/camera/color/camera_info
+
+# Arm pose between objects and while photographing: must keep the arm OUT of the camera's view.
+# Default: ur3e_plan_runner's plan start (home_q_ros), gripper pointing down at base (0.30, -0.13, 0.30).
+home_q: [0.0, -1.57, 1.57, -1.57, -1.57, 0.0]
+
+gripper:
+  port: 63352                    # Robotiq URCap socket server on the controller
+  # Flange (tool0) to the fingertips: the lab's plans use tcp_offset_m 0.145 (ur3e_experiments).
+  # tcp_z is the centre of the pads along the approach axis = tip_z - pad_half. CHECK on the robot.
+  tcp_z: 0.125
+  tip_z: 0.145                   # flange to the closed fingertips (used to touch calibration points)
+  pad_half: 0.020                # half the pad length along the approach axis
+  pad_width: 0.022               # pad width across the approach axis (MEASURE your fingertips)
+  calibration: data/real/calib/gripper.json   # width model from calibrate_gripper (optional)
+
+# The probing policy. Must match the simulation run (real2sim/run_sim_probes.py reads this file).
+protocol:
+  # The Hand-E cannot grip below 20 N (the simulation's earlier 0.5 / 2 N squeeze is not
+  # reproducible on hardware), so both sim and real squeeze at these forces.
+  squeeze_forces_N: [20, 60]
+  lift_force_N: 20
+  tip_clearance: 0.005           # fingertips above the table at the grasp (sim: 0.003)
+  above: 0.10                    # approach / lift height above the object's top
+  hold_offset: [-0.25, 0.0, 0.22]  # TCP hold point: x, y in base, z above the table (as in the sim)
+  settle_s: 1.0                  # still time before a reading (sim: 1.0)
+  ft_window_s: 2.0               # wrench averaging window (sim: 1.0; longer on hardware for noise)
+  ft_after: true                 # also weigh the empty gripper after each object (cancels F/T drift)
+  durations: {approach: 3.0, descend: 2.5, lift: 2.0, to_hold: 3.0, home: 3.0}
+  # Simulated squeeze: `analytic` (real2sim/sim_squeeze_model.py, linear-elastic contact with
+  # SLAT-Phys's E) because Isaac FEM tunnels at 20-60 N (README, "Known issue"); `fem` runs Isaac.
+  sim_squeeze: analytic
+  model_max_strain: 0.8
+
+safety:
+  max_joint_speed_rad_s: 0.8
+  max_joint_step_rad: 0.35       # between consecutive Cartesian waypoints (IK branch flips)
+  min_tcp_above_table: 0.018     # the TCP may never go lower than this above the table
+  max_reach: 0.45
+  settle_tol_rad: 0.003          # enme480 backend: joints this close to the goal, and still
+  line_tol_m: 0.0015             # enme480 backend: max TCP deviation from straight descents / lifts
+
+# Simulation world convention (SLAT-Phys-Scene): the robot at world (robot_base_xy, table_height),
+# objects toward world -x. workspace_yaw_deg is the direction of the object area seen from the
+# real base (in `base`, from +x): the lab's plans grasp around (0.19, -0.33) m -> about -45..-60 deg.
+world:
+  workspace_yaw_deg: 180   # this test places the objects toward -x of base
+  robot_base_xy: [0.5, 0.0]
+  table_height: 0.75
+
+calib_dir: data/real/calib
+allow_nan_wrench: true   # mock hardware publishes NaN wrenches

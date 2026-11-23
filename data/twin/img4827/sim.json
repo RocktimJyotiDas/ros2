@@ -1,0 +1,112 @@
+{
+  "scene_id": "heavy_img4827",
+  "source": "slatphys",
+  "task": "heavy",
+  "instruction": "Pick up each object one at a time and tell me which one is heavier.",
+  "table": {
+    "size": [
+      1.2,
+      0.8,
+      0.04
+    ],
+    "height": 0.75,
+    "placement_margin": 0.12
+  },
+  "robot_base_xy": [
+    0.5,
+    0.0
+  ],
+  "objects": [
+    {
+      "name": "yellow_toy",
+      "mesh": "obj_00_hull.obj",
+      "body": "fem",
+      "mass_kg": 0.013143519988281251,
+      "com_world": [
+        0.22819554721030047,
+        0.06250563304721032,
+        0.7866048819742489
+      ],
+      "inertia_world": [
+        [
+          3.6208242455418075e-06,
+          -5.370719207870811e-08,
+          8.284541123782467e-07
+        ],
+        [
+          -5.370719207870811e-08,
+          4.651880378696915e-06,
+          6.814394210792585e-08
+        ],
+        [
+          8.284541123782467e-07,
+          6.814394210792585e-08,
+          3.5187978653150224e-06
+        ]
+      ],
+      "fem_density": 220.3513946533203,
+      "E": 80272.234375,
+      "nu": 0.3679843842983246,
+      "friction": 0.6,
+      "hollow": false,
+      "envelope_volume_m3": 5.9648e-05,
+      "grasp": {
+        "centre_xy": [
+          0.2275436967611313,
+          0.06295240111649036
+        ],
+        "yaw": -1.5194299371452855,
+        "width": 0.04554506162759475,
+        "top_z": 0.8250527381896973,
+        "height": 0.07505273818969727
+      },
+      "slatphys_material": "jelly"
+    },
+    {
+      "name": "green_disc",
+      "mesh": "obj_01_hull.obj",
+      "body": "fem",
+      "mass_kg": 0.019863044335937503,
+      "com_world": [
+        0.23154584269662926,
+        -0.025794831460674163,
+        0.7613710112359551
+      ],
+      "inertia_world": [
+        [
+          8.449909309441798e-06,
+          6.666590363772665e-10,
+          5.125641313224816e-08
+        ],
+        [
+          6.666590363772665e-10,
+          8.578664093541182e-06,
+          -2.8335086578539454e-07
+        ],
+        [
+          5.125641313224816e-08,
+          -2.8335086578539454e-07,
+          1.588719859246153e-05
+        ]
+      ],
+      "fem_density": 278.975341796875,
+      "E": 217451.09375,
+      "nu": 0.36934489011764526,
+      "friction": 0.6,
+      "hollow": false,
+      "envelope_volume_m3": 7.120000000000001e-05,
+      "grasp": {
+        "centre_xy": [
+          0.23139451444149017,
+          -0.025786250829696655
+        ],
+        "yaw": 2.602077271332051,
+        "width": 0.08245724018055826,
+        "top_z": 0.7745100855827332,
+        "height": 0.024510085582733154
+      },
+      "slatphys_material": "jelly"
+    }
+  ],
+  "note": "SLAT-Phys twin of photo.jpg (camera height ASSUMED 0.30 m above the table: the metric scale). Simulation world frame: robot base at robot_base_xy, objects toward -x. Meshes are the convex hulls of the reconstructions (same extents; make_world.py only needs extents)."
+}

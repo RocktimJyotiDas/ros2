@@ -1,0 +1,50 @@
+# ur_simulation_gz's controllers (the arm, unchanged) + the gripper's effort controller.
+controller_manager:
+  ros__parameters:
+    update_rate: 5000  # Hz = the physics rate (0.2 ms steps, scripts/make_world.py): an effort command
+                       # then acts on every physics step
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    scaled_joint_trajectory_controller:
+      type: ur_controllers/ScaledJointTrajectoryController
+
+    gripper_effort_controller:
+      type: effort_controllers/JointGroupEffortController
+
+scaled_joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+      - wrist_2_joint
+      - wrist_3_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    speed_scaling_interface_name: ""
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.2
+      goal_time: 0.0
+      shoulder_pan_joint: { trajectory: 0.2, goal: 0.1 }
+      shoulder_lift_joint: { trajectory: 0.2, goal: 0.1 }
+      elbow_joint: { trajectory: 0.2, goal: 0.1 }
+      wrist_1_joint: { trajectory: 0.2, goal: 0.1 }
+      wrist_2_joint: { trajectory: 0.2, goal: 0.1 }
+      wrist_3_joint: { trajectory: 0.2, goal: 0.1 }
+
+# Commands: one force per finger in N, positive opens (the joints' axes point outward).
+# slatphys_real.gripper_ros publishes [-F, -F] to grip at F, like the Hand-E's force setting.
+gripper_effort_controller:
+  ros__parameters:
+    joints:
+      - finger_left_joint
+      - finger_right_joint

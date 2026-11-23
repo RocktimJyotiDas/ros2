@@ -1,0 +1,249 @@
+{
+  "scene_id": "img4827",
+  "source": "real",
+  "task": "heavy_deformable",
+  "readings": [
+    {
+      "object_index": 1,
+      "gripper_squeeze": [
+        {
+          "commanded_force_N": 20,
+          "width_m": 0.013717,
+          "pos_raw": [
+            0.013717,
+            0.013717,
+            0.013717,
+            0.013717,
+            0.013717
+          ],
+          "obj_status": 2
+        },
+        {
+          "commanded_force_N": 60,
+          "width_m": 0.004408,
+          "pos_raw": [
+            0.004408,
+            0.004408,
+            0.004408,
+            0.004408,
+            0.004408
+          ],
+          "obj_status": 2
+        }
+      ],
+      "lift_grip_force_N": 20,
+      "gripper_width_while_holding_m": 0.01372,
+      "wrist_force_torque": {
+        "frame": "as published by ur_robot_driver (same pose for all three readings)",
+        "components": [
+          "Fx_N",
+          "Fy_N",
+          "Fz_N",
+          "Tx_Nm",
+          "Ty_Nm",
+          "Tz_Nm"
+        ],
+        "without_object": [
+          0.0,
+          -0.0,
+          11.9658,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "with_object": [
+          0.0,
+          -0.0,
+          11.9805,
+          -0.0,
+          -0.000486,
+          -0.0
+        ],
+        "without_object_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "with_object_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1e-05,
+          0.0
+        ],
+        "without_object_after": [
+          0.0,
+          -0.0,
+          11.9658,
+          0.0,
+          0.0,
+          -0.0
+        ],
+        "samples": [
+          62,
+          57,
+          64
+        ]
+      }
+    },
+    {
+      "object_index": 2,
+      "gripper_squeeze": [
+        {
+          "commanded_force_N": 20,
+          "width_m": 0.023757,
+          "pos_raw": [
+            0.023757,
+            0.023757,
+            0.023757,
+            0.023756,
+            0.023756
+          ],
+          "obj_status": 2
+        },
+        {
+          "commanded_force_N": 60,
+          "width_m": 0.007999,
+          "pos_raw": [
+            0.007999,
+            0.007999,
+            0.007999,
+            0.007999,
+            0.007999
+          ],
+          "obj_status": 2
+        }
+      ],
+      "lift_grip_force_N": 20,
+      "gripper_width_while_holding_m": 0.023757,
+      "wrist_force_torque": {
+        "frame": "as published by ur_robot_driver (same pose for all three readings)",
+        "components": [
+          "Fx_N",
+          "Fy_N",
+          "Fz_N",
+          "Tx_Nm",
+          "Ty_Nm",
+          "Tz_Nm"
+        ],
+        "without_object": [
+          0.0,
+          -0.0,
+          11.9658,
+          0.0,
+          0.0,
+          -0.0
+        ],
+        "with_object": [
+          0.0,
+          -0.0,
+          11.988026,
+          1e-06,
+          0.000232,
+          0.0
+        ],
+        "without_object_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "with_object_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.4e-05,
+          0.0
+        ],
+        "without_object_after": [
+          0.0,
+          -0.0,
+          11.9658,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "samples": [
+          63,
+          58,
+          67
+        ]
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "squeeze": {
+        "name": "yellow_toy",
+        "grasp": {
+          "centre_xy": [
+            0.1269,
+            -0.2492
+          ],
+          "yaw": 0.749498,
+          "width": 0.022094,
+          "top_z": 0.036408,
+          "height": 0.036408
+        },
+        "contact": true
+      },
+      "weigh": {
+        "name": "yellow_toy",
+        "grasp": {
+          "centre_xy": [
+            0.1269,
+            -0.2492
+          ],
+          "yaw": 0.749498,
+          "width": 0.022094,
+          "top_z": 0.036408,
+          "height": 0.036408
+        },
+        "width_after_grip_m": 0.013717,
+        "lifted": true,
+        "load_N": 0.0147,
+        "ft_drift_N": 0.0
+      }
+    },
+    {
+      "squeeze": {
+        "name": "green_disc",
+        "grasp": {
+          "centre_xy": [
+            0.1924,
+            -0.1892
+          ],
+          "yaw": -1.41218,
+          "width": 0.04,
+          "top_z": 0.01189,
+          "height": 0.01189
+        },
+        "contact": true
+      },
+      "weigh": {
+        "name": "green_disc",
+        "grasp": {
+          "centre_xy": [
+            0.1924,
+            -0.1892
+          ],
+          "yaw": -1.41218,
+          "width": 0.04,
+          "top_z": 0.01189,
+          "height": 0.01189
+        },
+        "width_after_grip_m": 0.023756,
+        "lifted": true,
+        "load_N": 0.022226,
+        "ft_drift_N": 0.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "scene_id": "img4827",
+  "task": "heavy_deformable",
+  "instruction": "Pick up each object one at a time and tell me which one is heavier and which one is deformable.",
+  "source_photo": "data/IMG_4827.jpg",
+  "note": "fill mass_g (kitchen scale), size_mm (calipers) and soft (true/false) before scoring",
+  "objects": [
+    {
+      "id": "yellow_toy",
+      "name": "yellow_toy",
+      "class": "toy",
+      "mass_g": null,
+      "size_mm": null,
+      "soft": null,
+      "xy_base": [
+        0.143,
+        -0.272
+      ]
+    },
+    {
+      "id": "green_disc",
+      "name": "green_disc",
+      "class": "disc",
+      "mass_g": null,
+      "size_mm": null,
+      "soft": null,
+      "xy_base": [
+        0.243,
+        -0.188
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.8)
+project(slatphys_gazebo NONE)
+find_package(ament_cmake REQUIRED)
+install(DIRECTORY urdf config launch worlds DESTINATION share/${PROJECT_NAME})
+install(PROGRAMS scripts/make_world.py DESTINATION lib/${PROJECT_NAME})
+ament_package()
