@@ -30,7 +30,7 @@
         <collision name="c"><geometry><box><size>0.00221 0.02921 0.03641</size></box></geometry>
           <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
         </collision>
-        <visual name="v"><geometry><box><size>0.00221 0.02921 0.03641</size></box></geometry>
+        <visual name="v"><pose>0.00442 0 0 0 0 0</pose><geometry><box><size>0.01105 0.02921 0.03641</size></box></geometry>
           <material><ambient>0.95 0.8 0.1 1</ambient><diffuse>0.95 0.8 0.1 1</diffuse></material>
         </visual>
       </link>
@@ -42,7 +42,7 @@
         <collision name="c"><geometry><box><size>0.00221 0.02921 0.03641</size></box></geometry>
           <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
         </collision>
-        <visual name="v"><geometry><box><size>0.00221 0.02921 0.03641</size></box></geometry>
+        <visual name="v"><pose>-0.00442 0 0 0 0 0</pose><geometry><box><size>0.01105 0.02921 0.03641</size></box></geometry>
           <material><ambient>0.95 0.8 0.1 1</ambient><diffuse>0.95 0.8 0.1 1</diffuse></material>
         </visual>
       </link>
@@ -66,7 +66,7 @@
         <collision name="c"><geometry><box><size>0.00400 0.03998 0.01189</size></box></geometry>
           <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
         </collision>
-        <visual name="v"><geometry><box><size>0.00400 0.03998 0.01189</size></box></geometry>
+        <visual name="v"><pose>0.00800 0 0 0 0 0</pose><geometry><box><size>0.02000 0.03998 0.01189</size></box></geometry>
           <material><ambient>0.1 0.65 0.45 1</ambient><diffuse>0.1 0.65 0.45 1</diffuse></material>
         </visual>
       </link>
@@ -78,7 +78,7 @@
         <collision name="c"><geometry><box><size>0.00400 0.03998 0.01189</size></box></geometry>
           <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
         </collision>
-        <visual name="v"><geometry><box><size>0.00400 0.03998 0.01189</size></box></geometry>
+        <visual name="v"><pose>-0.00800 0 0 0 0 0</pose><geometry><box><size>0.02000 0.03998 0.01189</size></box></geometry>
           <material><ambient>0.1 0.65 0.45 1</ambient><diffuse>0.1 0.65 0.45 1</diffuse></material>
         </visual>
       </link>

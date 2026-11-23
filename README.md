@@ -67,10 +67,19 @@ configs/real.yaml           the real robot: IP, topics, gripper geometry, protoc
 configs/gazebo.yaml         real.yaml with only the simulation backends changed (marked GAZEBO)
 data/plans/img4827.json     the scene: object names, planned positions, ground truth to fill in
 data/twin/img4827/          the photo, masks, and the SLAT-Phys twin (sim.json, hull meshes, grasps.json)
-scripts/sim_demo.sh         Gazebo: launch, check the bench, run both tasks
+real2sim/                   offline (GPU) steps between the camera photo and the robot:
+  make_scene.py             photo + calibration -> object masks and real table positions
+  materialize_real.py       reconstruction -> grasps.json (base frame) + the simulation twin
+  plan_scenes.py            sample scene plans from an object inventory (configs/objects.yaml)
+  run_sim_probes.py, sim_probe_launcher.py, sim_squeeze_model.py   the twin probed in Isaac Sim
+  correlate.py              sim-vs-real metrics over many scenes
+  photo_scene.py, photo_pipeline.py   the paper's pipeline on an uncalibrated phone photo (data/twin)
+scripts/offline.sh          recon / materialize / simprobe / correlate wrappers (needs SLATPHYS_SCENE)
+scripts/sim_demo.sh         Gazebo: launch, check the bench, run both tasks (RECORD=1 records video)
 scripts/make_worlds.sh      regenerate the Gazebo worlds from the twin
-tests/                      no-robot tests (mock, lab-stack mock, Gazebo checks)
-results/gazebo/             reference Gazebo runs (readings, answers, logs)
+scripts/record_world.py, record_frames.py, make_video.py   Gazebo video recording
+tests/                      no-robot tests (mock, lab-stack mock, Gazebo checks, offline/)
+results/gazebo/, results/videos/   reference Gazebo runs and their videos
 docker/                     robot image (on the lab's) and simulation image
 docs/CODE_WALKTHROUGH.md    how the code works, file by file
 ```
@@ -86,7 +95,10 @@ GUI=1 scripts/sim_demo.sh                                              # twin sc
 GUI=1 scripts/sim_demo.sh src/slatphys_gazebo/worlds/img4827_fit40_rigiddisc
 scripts/sim_demo.sh src/slatphys_gazebo/worlds/img4827_asis           # preflight refuses (disc too wide)
 tests/mock/run.sh                                                      # no simulator: dry run, mock run, refusal
+RECORD=1 scripts/sim_demo.sh && python3 scripts/make_video.py runs/img4827_fit40   # captioned MP4
 ```
+
+Videos of both scenes: `results/videos/scene1_twin.mp4`, `results/videos/scene2_control_rigid_disc.mp4`.
 
 Each run takes ~7 min. It writes `runs/<world>/answers.json`; the log shows every probing step.
 
@@ -136,16 +148,41 @@ Then:
    `capture --out data/real/captures/_empty` for the empty-table photo.
 2. **Set up the scene.** Run `place --plan data/plans/img4827.json --execute MOVE_REAL_UR3E` (the
    fingertips point at each planned position), then `capture`.
-3. **Reconstruct offline.** Run the SLAT-Phys reconstruction on the captured photo (GPU, outside
-   this repo). It writes `grasps.json` in the robot's `base` frame. **Do not move the objects.**
+3. **Reconstruct offline** (GPU machine, `real2sim/` + `scripts/offline.sh`; **do not move the objects**).
+   Copy `data/real/captures/` and `data/real/calib/` there, then:
+   ```bash
+   export SLATPHYS_SCENE=/path/to/SLAT-Phys-Scene          # the SAM-3D + SLAT-Phys reconstruction checkout
+   python3 real2sim/make_scene.py --plan data/plans/img4827.json \
+       --capture data/real/captures/img4827 --empty data/real/captures/_empty   # check data/real/scenes/img4827/overlay.png
+   scripts/offline.sh recon data/real/scenes/img4827      # SAM-3D meshes + SLAT-Phys physics, ~1-2 min per object
+   scripts/offline.sh materialize                         # -> data/real/sim/slatphys/img4827/grasps.json (robot base frame)
+   ```
+   `make_scene` masks the objects by differencing with the empty-table photo, then casts each mask
+   centre through the calibrated camera onto the table plane. That gives the objects' real
+   positions; the plan's `xy_base` only names them. Copy `grasps.json` back to the robot PC.
 4. **Run the tasks:**
    ```bash
-   G=data/real/grasps/img4827.json
+   G=data/real/sim/slatphys/img4827/grasps.json
    ros2 run slatphys_real run_tasks --grasps $G --plan data/plans/img4827.json --out runs/real_img4827 --dry_run
    ros2 run slatphys_real run_tasks --grasps $G --plan data/plans/img4827.json --out runs/real_img4827 \
        --execute MOVE_REAL_UR3E --activate_gripper --step
    ```
    With the default 30 % slider a scene of two objects takes about 7 minutes. Keep a hand on the e-stop.
+
+## Offline dependencies
+
+The offline steps (`real2sim/`, `scripts/offline.sh`, `tests/offline/`) need, on a GPU machine:
+
+- the **SLAT-Phys-Scene** checkout, `export SLATPHYS_SCENE=...`, which provides the SAM-3D +
+  SLAT-Phys reconstruction (`slatscene.recon_task_scenes`), its helpers and the Isaac Sim probe
+- its python env (SAM-3D-Objects + SLAT-Phys), activated by `$SLATPHYS_SCENE/setup/sam3d_env.sh`,
+  or your own via `SLATPHYS_ENV_SH`
+- Isaac Sim 6.2, only for `offline.sh simprobe` (runner: `$SLATPHYS_SCENE/setup/isaac62_run.sh`,
+  or `SLATPHYS_ISAAC_RUNNER`)
+
+Check them with `PYTHONPATH=$SLATPHYS_SCENE python tests/offline/test_offline.py`, which covers IK,
+camera calibration, frames and reach, `make_scene` (including an unmeasured plan), `correlate`, and
+the Isaac launcher.
 
 ## Open items before the real run
 
@@ -153,6 +190,10 @@ Then:
   0.30 m above the table. At that scale the disc is 82 mm across, which the Hand-E (50 mm) cannot
   grasp. Measure both objects; if the disc really is ~8 cm, replace it with an object whose
   narrow side is 15–40 mm.
-- **Ground truth.** Fill `mass_g`, `size_mm` and `soft` in `data/plans/img4827.json`.
+- **Ground truth.** Fill `mass_g`, `size_mm` and `soft` in `data/plans/img4827.json` before
+  scoring. `make_scene` accepts them as `null`.
+- **Use real grasps.** `data/twin/img4827/grasps.json` is a preview from the uncalibrated photo
+  (`preview_from_uncalibrated_photo: true`). Never run the robot on it: real positions come from
+  step 3.
 - **Check on the robot.** `gripper.tcp_z`, `tip_z` and `pad_width`, and `world.workspace_yaw_deg`
   in `configs/real.yaml`.

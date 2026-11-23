@@ -44,9 +44,13 @@ def box_inertia(m, x, y, z):
     return m * (y * y + z * z) / 12, m * (x * x + z * z) / 12, m * (x * x + y * y) / 12
 
 
-def link(name, pose, m, size, rgba):
+def link(name, pose, m, size, rgba, visual=None):
+    """visual: (x offset, size) of a visual-only box, if it differs from the collision box."""
     ixx, iyy, izz = box_inertia(m, *size)
     s = " ".join(f"{v:.5f}" for v in size)
+    vpose, vs = "0 0 0 0 0 0", s
+    if visual:
+        vpose, vs = f"{visual[0]:.5f} 0 0 0 0 0", " ".join(f"{v:.5f}" for v in visual[1])
     return f"""
       <link name="{name}">
         <pose>{" ".join(f"{v:.5f}" for v in pose)}</pose>
@@ -56,7 +60,7 @@ def link(name, pose, m, size, rgba):
         <collision name="c"><geometry><box><size>{s}</size></box></geometry>
           <surface><friction><ode><mu>{MU}</mu><mu2>{MU}</mu2></ode></friction></surface>
         </collision>
-        <visual name="v"><geometry><box><size>{s}</size></box></geometry>
+        <visual name="v"><pose>{vpose}</pose><geometry><box><size>{vs}</size></box></geometry>
           <material><ambient>{rgba}</ambient><diffuse>{rgba}</diffuse></material>
         </visual>
       </link>"""
@@ -71,8 +75,10 @@ def model(o, xy_world, yaw_world, rgba):
     # full 0.8 L (with two half-blocks a finger would run into the other half at L / 2).
     t, half = PLATE * w, m / 2
     damping = 2 * math.sqrt(o["k"] * half)  # about critical: settles without ringing
-    return head + link("plate_a", (-(w - t) / 2, 0, h / 2, 0, 0, 0), half, (t, l, h), rgba) + \
-        link("plate_b", ((w - t) / 2, 0, h / 2, 0, 0, 0), half, (t, l, h), rgba) + f"""
+    # Visuals: each plate carries half of the block, so the object looks solid and shrinks when squeezed.
+    dv = w / 4 - t / 2
+    return head + link("plate_a", (-(w - t) / 2, 0, h / 2, 0, 0, 0), half, (t, l, h), rgba, (dv, (w / 2, l, h))) + \
+        link("plate_b", ((w - t) / 2, 0, h / 2, 0, 0, 0), half, (t, l, h), rgba, (-dv, (w / 2, l, h))) + f"""
       <joint name="spring" type="prismatic">
         <parent>plate_a</parent><child>plate_b</child>
         <axis><xyz>1 0 0</xyz>

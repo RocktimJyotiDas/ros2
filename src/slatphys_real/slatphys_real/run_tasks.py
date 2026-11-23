@@ -34,6 +34,9 @@ def preflight(cfg, spec, tz):
     tcp_z, q_home = cfg["gripper"]["tcp_z"], np.array(cfg["home_q"], float)
     floor = tz + s["min_tcp_above_table"]
     problems = []
+    if spec.get("preview_from_uncalibrated_photo") and cfg.get("motion_backend", "enme480") == "enme480":
+        problems.append("these grasps come from an uncalibrated photo (preview_from_uncalibrated_photo): their "
+                        "positions are not robot coordinates. Use the grasps.json from a calibrated capture.")
     for k, o in enumerate(spec["objects"]):
         g, name = o["grasp"], f"object {k + 1} ({o['name']})"
         if g["width"] > STROKE_M - WIDTH_MARGIN_M:
