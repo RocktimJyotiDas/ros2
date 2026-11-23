@@ -1,0 +1,3 @@
+located vs the scene's true grasps:
+  yellow_toy   centre error   0.2 mm   axis error  0.1 deg   width  22.1 mm (true  22.1)
+  green_disc   centre error   0.6 mm   axis error  0.9 deg   width  40.0 mm (true  40.0)

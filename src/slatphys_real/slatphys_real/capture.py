@@ -1,6 +1,7 @@
-"""Save one top-down photo (and the camera intrinsics) from a ROS image topic.
+"""Save one scene photo (and the camera intrinsics) from a ROS image topic.
 
-The arm is first sent to home_q, which must keep it out of the camera's view. Several frames
+The arm is first sent to home_q, so it is in the same pose in every photo (it may be in view, but
+must not hide the objects). Several frames
 are averaged to cut sensor noise (the masks come from differencing against an empty-table shot).
 
     ros2 run slatphys_real capture --out data/real/captures/_empty      # once, empty table

@@ -119,9 +119,11 @@ WORLD = """<?xml version="1.0"?>
 """
 
 
-# The lab camera, simulated: straight down, 0.45 m above the table over the objects (README:
-# 0.40-0.50 m, over the object area). 1280x720 and ~69 deg horizontal FOV, like the RealSense profile.
-TOPCAM = {"height": 0.45, "w": 1280, "h": 720, "hfov": 1.20, "rate": 5}
+# The lab camera, simulated. front: in front of the table facing the robot, 0.50 m from the objects
+# and 0.30 m above the table (looking ~31 deg down); top: 0.45 m straight above them.
+# 1280x720 and ~69 deg horizontal FOV, like the RealSense profile.
+CAMERA = {"front": {"distance": 0.50, "height": 0.30}, "top": {"height": 0.45},
+          "w": 1280, "h": 720, "hfov": 1.20, "rate": 5}
 
 
 def rpy_matrix(r, p, y):
@@ -131,10 +133,19 @@ def rpy_matrix(r, p, y):
                      [-sp, cp * sr, cp * cr]])
 
 
-def topcam(centre_world):
-    """SDF for a downward camera above centre_world, and its pose as calibrate_camera would report
-    it: cam2base in OpenCV axes (x right, y down, z forward)."""
-    pose = (centre_world[0], centre_world[1], TOPCAM["height"], 0.0, np.pi / 2, 0.0)  # camera +x points down
+def scene_camera(kind, objects_world):
+    """SDF for the scene camera looking at the objects, and its pose as calibrate_camera would
+    report it: cam2base in OpenCV axes (x right, y down, z forward)."""
+    target = np.array([*objects_world, 0.02])
+    if kind == "top":
+        eye = np.array([*objects_world, CAMERA["top"]["height"]])
+        yaw, pitch = 0.0, np.pi / 2
+    else:  # beyond the objects, on the line from the robot's base through them: facing the robot
+        away = np.asarray(objects_world) / np.linalg.norm(objects_world)
+        eye = np.array([*(objects_world + CAMERA["front"]["distance"] * away), CAMERA["front"]["height"]])
+        d = target - eye
+        yaw, pitch = np.arctan2(d[1], d[0]), np.arctan2(-d[2], np.hypot(d[0], d[1]))  # camera +x looks along d
+    pose = (*eye, 0.0, pitch, yaw)
     T_world_link = np.eye(4)
     T_world_link[:3, :3], T_world_link[:3, 3] = rpy_matrix(*pose[3:]), pose[:3]
     link_cv = np.array([[0, 0, 1], [-1, 0, 0], [0, -1, 0]], float)  # columns: OpenCV x, y, z in the camera link
@@ -142,17 +153,17 @@ def topcam(centre_world):
     T_world_cv[:3, :3] = T_world_link[:3, :3] @ link_cv
     T_base_world = np.diag([-1.0, -1.0, 1.0, 1.0])  # base = base_link turned 180 deg about z
     sdf = f"""
-    <model name="topcam">
+    <model name="scene_cam">
       <static>true</static>
       <pose>{" ".join(f"{v:.5f}" for v in pose)}</pose>
       <link name="link">
-        <sensor name="topcam" type="camera">
+        <sensor name="scene_cam" type="camera">
           <always_on>true</always_on>
-          <update_rate>{TOPCAM["rate"]}</update_rate>
-          <topic>/topcam/image</topic>
+          <update_rate>{CAMERA["rate"]}</update_rate>
+          <topic>/scene_cam/image</topic>
           <camera>
-            <horizontal_fov>{TOPCAM["hfov"]}</horizontal_fov>
-            <image><width>{TOPCAM["w"]}</width><height>{TOPCAM["h"]}</height><format>R8G8B8</format></image>
+            <horizontal_fov>{CAMERA["hfov"]}</horizontal_fov>
+            <image><width>{CAMERA["w"]}</width><height>{CAMERA["h"]}</height><format>R8G8B8</format></image>
             <clip><near>0.05</near><far>5</far></clip>
           </camera>
         </sensor>
@@ -174,8 +185,8 @@ def main():
     ap.add_argument("--fit_width", type=float, default=None, help="scale the scene so the widest grasp is this (m)")
     ap.add_argument("--scene_id", default=None)
     ap.add_argument("--rigid", nargs="*", default=[], help="make these objects rigid (control scenes)")
-    ap.add_argument("--topcam", action="store_true",
-                    help="add the top-down camera (validates capture + locate) and an object-free world_empty.sdf")
+    ap.add_argument("--camera", choices=["front", "top"], default=None,
+                    help="add a scene camera (validates capture + locate) and an object-free world_empty.sdf")
     ap.add_argument("--squeeze_forces", type=float, nargs=2, default=[20.0, 60.0], help="as configs/*.yaml protocol")
     args = ap.parse_args()
     sim, gr = json.load(open(args.sim)), json.load(open(args.grasps))
@@ -206,9 +217,9 @@ def main():
                      for k, o in enumerate(objs))
     os.makedirs(args.out, exist_ok=True)
     src = os.path.relpath(args.sim, args.out)
-    if args.topcam:
+    if args.camera:
         xy = np.mean([o["xy_base"] for o in objs], 0)
-        cam_sdf, cam2base = topcam((-xy[0], -xy[1]))
+        cam_sdf, cam2base = scene_camera(args.camera, np.array([-xy[0], -xy[1]]))
         w = WORLD.format(src=src, mu=MU, models=models + cam_sdf)
         w = w.replace('    <plugin filename="gz-sim-physics-system"', SENSORS + '    <plugin filename="gz-sim-physics-system"', 1)
         open(os.path.join(args.out, "world.sdf"), "w").write(w)
@@ -218,7 +229,7 @@ def main():
         json.dump({"cam2base_opencv": cam2base, "table_z_base": 0.0, "D": [0.0] * 5,
                    "note": "the simulated camera's exact pose: what calibrate_camera measures in the lab. "
                            "K comes from the captured camera_info."},
-                  open(os.path.join(args.out, "topcam_pose.json"), "w"), indent=2)
+                  open(os.path.join(args.out, "camera_pose.json"), "w"), indent=2)
     else:
         open(os.path.join(args.out, "world.sdf"), "w").write(WORLD.format(src=src, mu=MU, models=models))
     sid = args.scene_id or gr["scene_id"]

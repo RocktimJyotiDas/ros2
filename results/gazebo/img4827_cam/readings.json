@@ -55,8 +55,8 @@
           0.0,
           -0.0,
           11.9805,
-          1e-06,
-          -0.000499,
+          -1.1e-05,
+          -0.000496,
           -0.0
         ],
         "without_object_std": [
@@ -84,9 +84,9 @@
           0.0
         ],
         "samples": [
-          89,
+          94,
           85,
-          93
+          96
         ]
       }
     },
@@ -95,31 +95,31 @@
       "gripper_squeeze": [
         {
           "commanded_force_N": 20,
-          "width_m": 0.04,
+          "width_m": 0.03998,
           "pos_raw": [
-            0.04,
-            0.04,
-            0.04,
-            0.04,
-            0.04
+            0.03998,
+            0.03998,
+            0.03998,
+            0.03998,
+            0.03998
           ],
           "obj_status": 2
         },
         {
           "commanded_force_N": 60,
-          "width_m": 0.04,
+          "width_m": 0.03998,
           "pos_raw": [
-            0.04,
-            0.04,
-            0.04,
-            0.04,
-            0.04
+            0.03998,
+            0.03998,
+            0.03998,
+            0.03998,
+            0.03998
           ],
           "obj_status": 2
         }
       ],
       "lift_grip_force_N": 20,
-      "gripper_width_while_holding_m": 0.04,
+      "gripper_width_while_holding_m": 0.03998,
       "wrist_force_torque": {
         "frame": "as published by ur_robot_driver (same pose for all three readings)",
         "components": [
@@ -131,20 +131,20 @@
           "Tz_Nm"
         ],
         "without_object": [
-          0.0,
+          -0.0,
           -0.0,
           11.9658,
           0.0,
-          0.0,
-          0.0
+          -0.0,
+          -0.0
         ],
         "with_object": [
-          0.0,
+          -0.0,
           -0.0,
           11.988017,
-          1e-06,
-          2.4e-05,
-          0.0
+          -1.6e-05,
+          -0.001142,
+          -0.0
         ],
         "without_object_std": [
           0.0,
@@ -159,21 +159,21 @@
           0.0,
           0.0,
           0.0,
-          2e-05,
+          4e-06,
           0.0
         ],
         "without_object_after": [
-          0.0,
+          -0.0,
           -0.0,
           11.9658,
           0.0,
-          0.0,
-          0.0
+          -0.0,
+          -0.0
         ],
         "samples": [
-          95,
-          81,
-          88
+          94,
+          83,
+          97
         ]
       }
     }
@@ -185,10 +185,10 @@
         "grasp": {
           "centre_xy": [
             0.1263,
-            -0.2498
+            -0.2487
           ],
-          "yaw": 0.748378,
-          "width": 0.027156,
+          "yaw": 0.767945,
+          "width": 0.0221,
           "top_z": 0.0364,
           "height": 0.0364
         },
@@ -199,10 +199,10 @@
         "grasp": {
           "centre_xy": [
             0.1263,
-            -0.2498
+            -0.2487
           ],
-          "yaw": 0.748378,
-          "width": 0.027156,
+          "yaw": 0.767945,
+          "width": 0.0221,
           "top_z": 0.0364,
           "height": 0.0364
         },
@@ -217,11 +217,11 @@
         "name": "green_disc",
         "grasp": {
           "centre_xy": [
-            0.1924,
-            -0.1891
+            0.1916,
+            -0.1886
           ],
-          "yaw": 1.729452,
-          "width": 0.041884,
+          "yaw": 0.174533,
+          "width": 0.04,
           "top_z": 0.0119,
           "height": 0.0119
         },
@@ -231,15 +231,15 @@
         "name": "green_disc",
         "grasp": {
           "centre_xy": [
-            0.1924,
-            -0.1891
+            0.1916,
+            -0.1886
           ],
-          "yaw": 1.729452,
-          "width": 0.041884,
+          "yaw": 0.174533,
+          "width": 0.04,
           "top_z": 0.0119,
           "height": 0.0119
         },
-        "width_after_grip_m": 0.04,
+        "width_after_grip_m": 0.03998,
         "lifted": true,
         "load_N": 0.022217,
         "ft_drift_N": 0.0

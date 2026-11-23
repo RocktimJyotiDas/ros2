@@ -3,7 +3,7 @@
   "task": "heavy_deformable",
   "frame": "base",
   "table_z_base": 0.0,
-  "source": "camera (locate)",
+  "source": "camera (locate, box fit)",
   "objects": [
     {
       "name": "yellow_toy",
@@ -11,31 +11,31 @@
       "grasp": {
         "centre_xy": [
           0.1263,
-          -0.2498
+          -0.2487
         ],
-        "yaw": 0.748378,
-        "width": 0.027156,
+        "yaw": 0.767945,
+        "width": 0.0221,
         "top_z": 0.0364,
         "height": 0.0364
       },
-      "footprint_length_m": 0.031771,
-      "mask_area_px": 3982
+      "fit_iou": 0.966,
+      "mask_area_px": 3097
     },
     {
       "name": "green_disc",
       "obj_id": "green_disc",
       "grasp": {
         "centre_xy": [
-          0.1924,
-          -0.1891
+          0.1916,
+          -0.1886
         ],
-        "yaw": 1.729452,
-        "width": 0.041884,
+        "yaw": 0.174533,
+        "width": 0.04,
         "top_z": 0.0119,
         "height": 0.0119
       },
-      "footprint_length_m": 0.042203,
-      "mask_area_px": 7830
+      "fit_iou": 0.95,
+      "mask_area_px": 3756
     }
   ]
 }

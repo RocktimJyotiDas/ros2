@@ -27,7 +27,7 @@ One probing run answers both tasks. For each object, the robot does two passes:
    - The empty gripper is weighed once more to cancel sensor drift.
    - Load = |F_with − F_without|.
 
-Answers: **heavy** = largest load, **deformable** = largest compression. Grasp positions, gripper yaw and grasp width come from a calibrated top-down camera photo (`locate` → `grasps.json`).
+Answers: **heavy** = largest load, **deformable** = largest compression. Grasp positions and gripper yaw come from a calibrated camera photo (`locate` → `grasps.json`); grasp widths from the measured object sizes.
 
 ## Safety layers (all on by default)
 
@@ -46,7 +46,7 @@ Answers: **heavy** = largest load, **deformable** = largest compression. Grasp p
 ```
 src/slatphys_real/          the robot code (ament_python)
   run_tasks.py              ONE command for both tasks: preflight -> probe -> answers.json
-  locate.py                 calibrated top-down photo -> grasps.json (where each object is, how to grasp it)
+  locate.py                 calibrated camera photo (front or top) -> grasps.json: box fit per object
   probe.py                  the scripted squeeze + weigh passes
   tasks.py                  the answer rule (heavy / deformable); `answer` re-scores saved readings
   arm_enme480.py            arm through the lab stack (PlanSender -> ENME480 bridge)  [real robot]
@@ -75,7 +75,7 @@ real2sim/                   optional offline (GPU) SLAT-Phys comparison:
   correlate.py              sim-vs-real metrics over many scenes
   photo_scene.py, photo_pipeline.py   the paper's pipeline on an uncalibrated phone photo (data/twin)
 scripts/offline.sh          recon / materialize / simprobe / correlate wrappers (needs SLATPHYS_SCENE)
-scripts/sim_camera_pipeline.sh   Gazebo: the real sequence (capture, capture, locate, run_tasks) with a simulated camera
+scripts/sim_camera_pipeline.sh   Gazebo: the real sequence (capture, capture, locate, run_tasks), simulated front camera
 scripts/sim_demo.sh         Gazebo: launch, check the bench, run both tasks (RECORD=1 records video)
 scripts/make_worlds.sh      regenerate the Gazebo worlds from the twin
 scripts/record_world.py, record_frames.py, make_video.py   Gazebo video recording
@@ -120,7 +120,7 @@ Checks:
 | `img4827_fit40`: the SLAT-Phys twin, scaled so the grasps fit the Hand-E | disc ✔ | disc ✘ (expected toy) |
 | `img4827_fit40_rigiddisc`: control, disc rigid | disc ✔ | toy ✔ |
 | `img4827_asis`: the twin at the photo's scale | refused by preflight: disc 82 mm > 46 mm | — |
-| `img4827_cam`: **the real sequence**, capture → `locate` → `run_tasks`, simulated camera, soft toy + rigid disc | disc ✔ | toy ✔ |
+| `img4827_cam`: **the real sequence**, capture → `locate` → `run_tasks`, simulated front camera, soft toy + rigid disc | disc ✔ | toy ✔ |
 
 Why the twin's "deformable" differs:
 - SLAT-Phys predicts **both** objects soft (E = 8e4 and 2.2e5 Pa), so their predicted
@@ -145,7 +145,14 @@ source /workspace/install/setup.bash && cd /workspace/src/slatphys
 ros2 launch slatphys_real bringup.launch.py robot_ip:=$UR_IP        # then Play External Control, slider <= 30 %
 ```
 
-Then, all on the robot PC (no GPU, no reconstruction, no simulation):
+Then, all on the robot PC (no GPU, no reconstruction, no simulation).
+
+**The camera.** Use any RGB camera on a fixed mount in front of the table, looking down at the
+object area at roughly 30–50°. A top-down mount also works. For example: 0.25–0.40 m above the
+table, 0.4–0.6 m from the objects. The object area and the calibration markers must be in view.
+Seen from the camera, the objects must stand **side by side, not one behind the other**. The arm
+may appear in the photos as long as it doesn't hide the objects; `capture` sends it to `home_q`
+for every photo.
 
 1. **Calibrate (once).**
    ```bash
@@ -153,9 +160,10 @@ Then, all on the robot PC (no GPU, no reconstruction, no simulation):
    ros2 run slatphys_real calibrate_gripper --widths_mm 10 20 30 40               # optional: finger width model
    ros2 run slatphys_real capture --out data/real/captures/_empty --execute MOVE_REAL_UR3E   # empty table
    ```
-2. **Set up the scene.** Fill `size_mm` (calipers, `[w, l, height]`) for each object in the plan;
-   the height is the one thing the top-down camera cannot see. Place the objects (`place` points
-   the fingertips at each planned position), then photograph them:
+2. **Set up the scene.** Fill `size_mm` for each object in the plan: `[width, length, height]` in
+   mm, measured with calipers. `locate` models each object as a box of that size, and the grasp
+   width is the smaller of width and length. Place the objects (`place` points the fingertips at
+   each planned position), then photograph them:
    ```bash
    ros2 run slatphys_real place   --plan data/plans/img4827.json --execute MOVE_REAL_UR3E
    ros2 run slatphys_real capture --out data/real/captures/img4827 --execute MOVE_REAL_UR3E
@@ -167,14 +175,14 @@ Then, all on the robot PC (no GPU, no reconstruction, no simulation):
    ```
    - It masks each object by its colour change against the empty table. Shadows only darken
      the table, so they are ignored.
-   - It casts every mask pixel through the calibrated camera onto the table, at the object's
-     mid-height, in the robot `base` frame.
-   - It fits the smallest rectangle around that footprint. The grasp closes across the narrow
-     side, at the rectangle's centre.
+   - It models each object as a box of its measured size, standing on the table.
+   - It searches the box's position and rotation until its outline, projected through the
+     calibrated camera, best overlaps the mask (IoU). This works from the front or from above.
+   - The grasp closes across the box's narrow side, at its centre.
 
-   **Check `data/real/grasps/img4827_overlay.png`:** each mask should sit on its object, and the
-   white line (the closing axis) should run across the narrow side. **Do not move the objects from
-   here on.**
+   **Check `data/real/grasps/img4827_overlay.png`:** each white box outline should sit on its
+   object, and the yellow line (the closing axis) should run across the narrow side. It warns if
+   the overlap is below 0.70. **Do not move the objects from here on.**
 4. **Run the two tasks** (squeeze pass → deformable, weigh pass → heavy):
    ```bash
    G=data/real/grasps/img4827.json
@@ -185,14 +193,13 @@ Then, all on the robot PC (no GPU, no reconstruction, no simulation):
    With the default 30 % slider a scene of two objects takes about 7 minutes. Keep a hand on the e-stop.
 
 **Validated in Gazebo** (`scripts/sim_camera_pipeline.sh`, `results/gazebo/img4827_cam/`): the same
-four commands, with a simulated top-down camera (0.45 m, 1280×720) standing in for the lab
-camera. Results:
-- `locate` found the objects within 0.8 mm and 0.1 mm of their true centres, with the closing
-  axis within 0.1°.
-- Widths came out 27.2 and 41.9 mm against true 22.1 and 40.0 mm. The tall toy's visible sides
-  widen its outline. This only affects the preflight width check, on the safe side.
+four commands, with a simulated **front camera** standing in for the lab camera (0.50 m in front
+of the objects, 0.30 m above the table, 29° down, 1280×720):
+- `locate` placed the boxes within 0.8 and 1.0 mm of the true centres, with the closing axis
+  within about 1° and fit IoU 0.97 and 0.95.
 - `run_tasks` then answered **heavier = green_disc ✔** and **deformable = yellow_toy ✔**
   (soft toy, rigid disc).
+- The top-down variant (`img4827_cam_top`) is in `results/gazebo/img4827_cam_top/`.
 
 ### Optional: compare with SLAT-Phys's predictions (GPU, not needed to run the tasks)
 

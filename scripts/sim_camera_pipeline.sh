@@ -1,6 +1,6 @@
 #!/bin/bash
-# The real experiment's sequence, end to end in Gazebo, with a simulated top-down camera standing
-# in for the lab camera. Every step is the command used on the robot:
+# The real experiment's sequence, end to end in Gazebo, with a simulated camera (front view by
+# default) standing in for the lab camera. Every step is the command used on the robot:
 #   1. capture   the empty table             (world_empty.sdf: no objects; the arm goes home first)
 #   2. capture   the scene                   (world.sdf)
 #   3. locate    camera photos -> grasps.json (no reconstruction, no simulation data)
@@ -37,8 +37,8 @@ start_sim() {  # $1 = world file
     echo "$C" | grep -q "scaled_joint_trajectory_controller.*active" && echo "$C" | grep -q "gripper_effort_controller.*active" && break
     echo -n .; sleep 2
   done; echo
-  ros2 run ros_gz_bridge parameter_bridge /topcam/image@sensor_msgs/msg/Image[gz.msgs.Image \
-      /topcam/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo > $OUT/bridge.log 2>&1 & BR=$!
+  ros2 run ros_gz_bridge parameter_bridge /scene_cam/image@sensor_msgs/msg/Image[gz.msgs.Image \
+      /scene_cam/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo > $OUT/bridge.log 2>&1 & BR=$!
   sleep 3
 }
 stop_sim() {  # every kill may find the process already gone: never let that stop the script (set -e)
@@ -62,20 +62,21 @@ start_sim $WORLD_DIR/world.sdf
 ros2 run slatphys_real capture --out $OUT/captures/scene --execute MOVE_REAL_UR3E 2>&1 | grep -v WARN
 
 echo "=== 3. locate the objects"
-python3 - $WORLD_DIR/topcam_pose.json $OUT/captures/scene/camera_info.json $OUT/calib/camera.json <<'EOF'
+python3 - $WORLD_DIR/camera_pose.json $OUT/captures/scene/camera_info.json $OUT/calib/camera.json <<'EOF'
 import json, sys
 pose, info = json.load(open(sys.argv[1])), json.load(open(sys.argv[2]))
 json.dump({**pose, "K": info["K"], "D": info["D"] or [0.0] * 5, "resolution": info.get("resolution")}, open(sys.argv[3], "w"), indent=2)
 EOF
 ros2 run slatphys_real locate --plan $WORLD_DIR/plan.json --capture $OUT/captures/scene --empty $OUT/captures/_empty \
     --calib $OUT/calib/camera.json --out $OUT/grasps.json 2>&1 | grep -v WARN
-python3 - $OUT/grasps.json $WORLD_DIR/grasps.json <<'EOF' | tee $OUT/locate_vs_truth.txt
+python3 - $OUT/grasps.json $WORLD_DIR/grasps.json $WORLD_DIR/plan.json <<'EOF' | tee $OUT/locate_vs_truth.txt
 import json, sys, numpy as np
-got, true = json.load(open(sys.argv[1])), json.load(open(sys.argv[2]))
+got, true, plan = (json.load(open(a)) for a in sys.argv[1:4])
 print("located vs the scene's true grasps:")
-for g, t in zip(got["objects"], true["objects"]):
+for g, t, o in zip(got["objects"], true["objects"], plan["objects"]):
     a, b = g["grasp"], t["grasp"]
-    dyaw = abs((a["yaw"] - b["yaw"] + np.pi / 2) % np.pi - np.pi / 2)  # the closing axis has no sign
+    period = np.pi / 2 if abs(o["size_mm"][0] - o["size_mm"][1]) < 2 else np.pi  # a square repeats every 90 deg
+    dyaw = abs((a["yaw"] - b["yaw"] + period / 2) % period - period / 2)  # the closing axis has no sign
     print(f"  {g['name']:12s} centre error {np.linalg.norm(np.subtract(a['centre_xy'], b['centre_xy'])) * 1000:5.1f} mm   "
           f"axis error {np.degrees(dyaw):4.1f} deg   width {a['width'] * 1000:5.1f} mm (true {b['width'] * 1000:5.1f})")
 EOF

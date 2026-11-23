@@ -15,10 +15,10 @@ topics:
   wrench: /force_torque_sensor_broadcaster/wrench
   trajectory_action: /scaled_joint_trajectory_controller/follow_joint_trajectory
   zero_ft: /io_and_status_controller/zero_ftsensor   # not in Gazebo (the readings are differences anyway)
-  image: /topcam/image                 # GAZEBO: the simulated top-down camera (make_world.py --topcam)
-  camera_info: /topcam/camera_info
+  image: /scene_cam/image              # GAZEBO: the simulated scene camera (make_world.py --camera)
+  camera_info: /scene_cam/camera_info
 
-# Arm pose between objects and while photographing: must keep the arm OUT of the camera's view.
+# Arm pose between objects and while photographing: must not hide the objects from the camera.
 # Default: ur3e_plan_runner's plan start (home_q_ros), gripper pointing down at base (0.30, -0.13, 0.30).
 home_q: [0.0, -1.5707963267948966, -1.5707963267948966, -1.5707963267948966, 1.5707963267948966, 0.0]
 

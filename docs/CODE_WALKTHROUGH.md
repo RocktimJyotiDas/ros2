@@ -3,7 +3,7 @@
 ## 1. Data flow
 
 ```
-calibrated top-down photo + empty-table photo ──(locate)──► grasps.json  (per object: centre, yaw, width, top, height; robot base frame)
+calibrated camera photo + empty-table photo + measured sizes ──(locate)──► grasps.json  (per object: centre, yaw, width, top, height; robot base frame)
                                                     │
 configs/real.yaml ─────────────────────────────────►│
                                                     ▼
@@ -46,17 +46,24 @@ The same file drives the real robot and the Gazebo bench.
    - Clean up with morphological open/close and hole filling, then keep the N largest blobs. N is
      the number of plan objects.
    - Hand-drawn masks (`--masks_dir`) skip this step.
-3. **Matching.** Each blob's centroid is cast onto the table, and blobs are assigned to plan objects
-   by nearest `xy_base` (Hungarian assignment). It warns if a blob is more than 6 cm away.
-4. **Footprint (`pixels_to_plane`).** Every mask pixel becomes a camera ray, `K⁻¹ [u v 1]` rotated
-   by `cam2base`, and is intersected with the plane at the object's mid-height. That height comes
-   from the plan's `size_mm[2]`: a camera looking straight down can't see it.
-5. **Grasp (`footprint_grasp`).** `cv2.minAreaRect` fits the smallest rectangle around the
-   footprint. The closing axis runs across its narrow side, the width is that side, and the
-   centre is the rectangle's centre. This stays correct for square objects, where a
-   principal-axis fit picks an arbitrary direction.
-6. **Output.** Writes `grasps.json` and an overlay PNG showing the masks, each centre, and each
-   closing axis.
+3. **Matching.** Each blob's centroid is cast onto the plane at the objects' typical mid-height,
+   and blobs are assigned to plan objects by nearest `xy_base` (Hungarian assignment). It warns if
+   a blob is more than 6 cm away. That cast point is also the search's starting point.
+4. **Box fit (`BoxFitter`).** Each object is a box: narrow side × long side × height, from the
+   plan's `size_mm`.
+   - For a candidate pose (x, y, yaw on the table), `project` maps the box's 8 corners through
+     `K · cam2base⁻¹`.
+   - `iou` fills the convex hull of those corners (the outline of a convex box) and measures its
+     overlap with the mask.
+   - `fit` runs a coarse grid: ±5 cm in 4 mm steps, every 5° over 180° (90° for a square
+     footprint). Then a fine grid around the best: ±4 mm in 1 mm steps, ±5° in 1° steps.
+   - From an angled front view the depth of an object isn't visible directly, but its height is
+     known, so the box that matches the outline also fixes its position.
+5. **Grasp.** Centre = the box centre, closing axis across the narrow side, width = the narrow
+   side, top = table + height.
+6. **Output.** Writes `grasps.json` with each fit's IoU, and an overlay PNG showing the masks, the
+   fitted box outlines and the closing axes. It warns if IoU < 0.70: the size is wrong, or the
+   object is hidden.
 
 ### `probe.py`: the scripted probing (`Prober`)
 - `geometry(o)` computes three things:
@@ -132,8 +139,8 @@ calibration uses the same FK, so commanded and measured positions are consistent
 - **`calibrate_gripper.py`**: gauge blocks give the width model.
 - **`place.py`**: points the fingertips at each planned position so the objects go where the plan
   says.
-- **`capture.py`**: takes the top-down photo from the ROS image topic, after sending the arm
-  home (out of view).
+- **`capture.py`**: takes the scene photo (10 frames averaged) from the ROS image topic, after
+  sending the arm to `home_q`, so it is in the same pose in every photo.
 - **`launch/bringup.launch.py`**: starts ur_robot_driver, the ENME480 bridge (8 s later) and the
   RealSense camera.
 

@@ -16,7 +16,7 @@ topics:
   image: /camera/camera/color/image_raw            # realsense2_camera defaults; any RGB camera works
   camera_info: /camera/camera/color/camera_info
 
-# Arm pose between objects and while photographing: must keep the arm OUT of the camera's view.
+# Arm pose between objects and while photographing: must not hide the objects from the camera.
 # Default: ur3e_plan_runner's plan start (home_q_ros), gripper pointing down at base (0.30, -0.13, 0.30).
 home_q: [0.0, -1.5707963267948966, -1.5707963267948966, -1.5707963267948966, 1.5707963267948966, 0.0]
 
